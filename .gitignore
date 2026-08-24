@@ -10,3 +10,5 @@ models/*.gguf
 models/.cache/
 .coverage
 htmlcov/
+.env*
+.vscode/
