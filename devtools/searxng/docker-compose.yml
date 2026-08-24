@@ -1,0 +1,12 @@
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng-llm-lab
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    environment:
+      - BASE_URL=http://localhost:8888/
+      - INSTANCE_NAME=local-llm-lab
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:ro

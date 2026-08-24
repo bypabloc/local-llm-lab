@@ -55,3 +55,10 @@ def test_run_with_confirmation_ejecuta_comando_seguro_confirmado() -> None:
     assert outcome.executed is True
     assert outcome.return_code == 0
     assert "hola" in outcome.stdout
+
+
+def test_run_with_confirmation_no_crashea_con_binario_inexistente() -> None:
+    outcome = run_with_confirmation('search "algo que el modelo alucinó"', confirm=True)
+
+    assert outcome.executed is False
+    assert outcome.blocked_reason is not None

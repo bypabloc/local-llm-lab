@@ -10,15 +10,29 @@ from local_llm_lab.backends.errors import BackendLoadError
 from local_llm_lab.backends.llama_cpp_backend import LlamaCppBackend
 from local_llm_lab.backends.protocol import ChatMessage, LLMBackend
 from local_llm_lab.benchmark.runner import run_benchmark
+from local_llm_lab.config.dotenv import load_dotenv
 from local_llm_lab.config.models import load_model_configs
-from local_llm_lab.personas import Persona, get_persona, resolve_agent_name, wrap_banner
+from local_llm_lab.config.tools import load_tool_prompt
+from local_llm_lab.personalities import (
+    Persona,
+    get_persona,
+    resolve_agent_name,
+    wrap_banner,
+)
 from local_llm_lab.router.errors import ModelNotFoundError
 from local_llm_lab.router.llm_router import LLMRouter
-from local_llm_lab.shell.runner import (
-    SYSTEM_PROMPT_SUFFIX,
-    extract_run_command,
-    run_with_confirmation,
+from local_llm_lab.shell.location import (
+    extract_ip_query,
+    extract_location_query,
+    extract_weather_query,
+    get_location,
+    get_public_ip,
+    get_weather_for_current_location,
 )
+from local_llm_lab.shell.runner import extract_run_command, run_with_confirmation
+from local_llm_lab.shell.web_search import extract_search_query, search_web
+
+load_dotenv(Path.cwd() / ".env")
 
 app = typer.Typer(help="local-llm-lab: router + benchmark de LLMs locales")
 
@@ -113,6 +127,148 @@ def _handle_run_command(response_text: str) -> str | None:
     )
 
 
+def _handle_search_query(response_text: str) -> str | None:
+    """Si `response_text` propone una búsqueda vía SEARCH:, la ejecuta.
+
+    Devuelve un resumen para inyectar de vuelta al historial (rol system),
+    o None si no había consulta que buscar. No requiere confirmación manual
+    — es de solo lectura, no ejecuta nada en el sistema del usuario.
+    """
+    query = extract_search_query(response_text)
+    if query is None:
+        return None
+
+    typer.echo(f"\n>>> buscando en internet: {query}")
+    outcome = search_web(query)
+
+    if outcome.error is not None:
+        typer.echo(f">>> error de búsqueda: {outcome.error}")
+        return f"[búsqueda '{query}' falló: {outcome.error}]"
+
+    if not outcome.results:
+        typer.echo(">>> sin resultados")
+        return f"[búsqueda '{query}' no encontró resultados]"
+
+    for result in outcome.results:
+        typer.echo(f"  - {result.title} ({result.url})\n    {result.snippet}")
+
+    formatted = "\n".join(
+        f"- {r.title} ({r.url}): {r.snippet}" for r in outcome.results
+    )
+    return f"[resultados de búsqueda para '{query}':\n{formatted}]"
+
+
+def _handle_ip_query(response_text: str) -> str | None:
+    """Si `response_text` propone consultar la IP pública vía IP:, la resuelve.
+
+    Devuelve un resumen para inyectar de vuelta al historial (rol system),
+    o None si no había marcador. Es de solo lectura.
+    """
+    if not extract_ip_query(response_text):
+        return None
+
+    typer.echo("\n>>> consultando IP pública")
+    outcome = get_public_ip()
+
+    if outcome.error is not None:
+        typer.echo(f">>> error al consultar IP: {outcome.error}")
+        return f"[consulta de IP falló: {outcome.error}]"
+
+    typer.echo(f"  - {outcome.ip}")
+    return f"[IP pública actual: {outcome.ip}]"
+
+
+def _handle_location_query(response_text: str) -> str | None:
+    """Si `response_text` propone consultar la ubicación vía LOCATION:, la resuelve.
+
+    Devuelve un resumen para inyectar de vuelta al historial (rol system),
+    o None si no había marcador. Es de solo lectura.
+    """
+    if not extract_location_query(response_text):
+        return None
+
+    typer.echo("\n>>> consultando ubicación aproximada")
+    outcome = get_location()
+
+    if outcome.error is not None:
+        typer.echo(f">>> error al consultar ubicación: {outcome.error}")
+        return f"[consulta de ubicación falló: {outcome.error}]"
+
+    typer.echo(f"  - {outcome.city}, {outcome.country}")
+    return f"[ubicación aproximada actual: {outcome.city}, {outcome.country}]"
+
+
+def _handle_weather_query(response_text: str) -> str | None:
+    """Si `response_text` propone consultar clima vía WEATHER:, lo resuelve.
+
+    Encadena IP pública -> geolocalización -> clima (Open-Meteo). Devuelve un
+    resumen para inyectar de vuelta al historial (rol system), o None si no
+    había marcador. Es de solo lectura, no requiere confirmación manual.
+    """
+    if not extract_weather_query(response_text):
+        return None
+
+    typer.echo("\n>>> consultando ubicación y clima actual")
+    outcome = get_weather_for_current_location()
+
+    if outcome.error is not None:
+        typer.echo(f">>> error al consultar clima: {outcome.error}")
+        return f"[consulta de clima falló: {outcome.error}]"
+
+    typer.echo(
+        f"  - {outcome.city}, {outcome.country}: "
+        f"{outcome.temperature_celsius}°C (código {outcome.weather_code})"
+    )
+    return (
+        f"[clima actual en {outcome.city}, {outcome.country}: "
+        f"{outcome.temperature_celsius}°C, código de clima {outcome.weather_code}]"
+    )
+
+
+def _ensure_searxng_running() -> None:
+    """Si SEARXNG_URL apunta a una instancia local, la levanta con Docker si hace falta.
+
+    Import perezoso: `devtools/` es tooling de desarrollo fuera de src/, no una
+    dependencia del paquete instalable — su ausencia no debe romper el chat.
+    """
+    import os
+
+    url = os.environ.get("SEARXNG_URL")
+    if not url:
+        return
+
+    try:
+        from devtools.searxng.main import SearxngUnavailableError, ensure_running
+    except ImportError:
+        typer.echo(
+            ">>> aviso: no se pudo importar devtools/searxng "
+            "(¿corriste esto fuera del repo clonado?), sigo sin auto-levantar SearXNG"
+        )
+        return
+
+    try:
+        ensure_running(url)
+    except SearxngUnavailableError as exc:
+        typer.echo(f"Error: no se pudo levantar SearXNG en {url}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
+def _generate_and_echo(
+    backend: LLMBackend, history: list[ChatMessage], persona: Persona, max_tokens: int
+) -> str:
+    """Genera la respuesta del modelo, la imprime en streaming y la devuelve"""
+    typer.echo(f"{persona.name}: ", nl=False)
+    start = time.perf_counter()
+    chunks: list[str] = []
+    for token in backend.stream_chat(history, max_tokens=max_tokens):
+        typer.echo(token, nl=False)
+        chunks.append(token)
+    elapsed = time.perf_counter() - start
+    typer.echo()
+    typer.echo(f"--- tiempo={elapsed:.2f}s ---")
+    return "".join(chunks)
+
+
 def _run_interactive(
     backend: LLMBackend,
     system: str,
@@ -121,8 +277,12 @@ def _run_interactive(
     device: str,
     model: str,
     allow_shell: bool,
+    allow_search: bool,
     persona: Persona,
 ) -> None:
+    if allow_search:
+        _ensure_searxng_running()
+
     typer.echo(
         wrap_banner(
             persona,
@@ -131,7 +291,28 @@ def _run_interactive(
     )
     if allow_shell:
         typer.echo(">>> modo shell activo (comandos requieren tu confirmación)")
-    effective_system = system + SYSTEM_PROMPT_SUFFIX if allow_shell else system
+    if allow_search:
+        typer.echo(">>> búsqueda web activa")
+    typer.echo(">>> IP/ubicación/clima disponible")
+    effective_system = system
+    tool_names = [
+        "IP: — IP pública actual",
+        "LOCATION: — ubicación aproximada actual (ciudad/país)",
+        "WEATHER: — clima actual",
+    ]
+    if allow_shell:
+        tool_names.append("RUN: <comando> — ejecutar un comando de shell")
+    if allow_search:
+        tool_names.append("SEARCH: <consulta> — buscar en internet")
+    effective_system += (
+        "\n\nHerramientas disponibles (usalas escribiendo la línea exacta "
+        "cuando corresponda):\n" + "\n".join(f"- {t}" for t in tool_names)
+    )
+    effective_system += load_tool_prompt("weather")
+    if allow_shell:
+        effective_system += load_tool_prompt("shell")
+    if allow_search:
+        effective_system += load_tool_prompt("search")
     history: list[ChatMessage] = []
     if effective_system:
         history.append({"role": "system", "content": effective_system})
@@ -142,6 +323,11 @@ def _run_interactive(
         except (EOFError, KeyboardInterrupt):
             typer.echo("\n--- fin del chat ---")
             return
+        # ponytail: la terminal a veces manda bytes no-UTF8 (WSL2 + clipboard
+        # de Windows), que Python decodifica con surrogateescape y rompen al
+        # re-encodear en el tokenizer. errors="replace" los descarta acá,
+        # en el borde de entrada, antes de que lleguen al backend.
+        user_input = user_input.encode("utf-8", errors="replace").decode("utf-8")
         if user_input.strip().lower() == "exit":
             typer.echo("--- fin del chat ---")
             return
@@ -149,23 +335,44 @@ def _run_interactive(
         content = f"{user_input} /no_think" if no_think else user_input
         history.append({"role": "user", "content": content})
 
-        typer.echo(f"{model}: ", nl=False)
-        start = time.perf_counter()
-        chunks: list[str] = []
-        for token in backend.stream_chat(history, max_tokens=max_tokens):
-            typer.echo(token, nl=False)
-            chunks.append(token)
-        elapsed = time.perf_counter() - start
-        typer.echo()
-        typer.echo(f"--- tiempo={elapsed:.2f}s ---")
-
-        response_text = "".join(chunks)
+        response_text = _generate_and_echo(backend, history, persona, max_tokens)
         history.append({"role": "assistant", "content": response_text})
+
+        # ponytail: una sola ronda de seguimiento automático, no un loop —
+        # evita que el modelo encadene tools indefinidamente sin que el
+        # usuario vuelva a intervenir.
+        used_a_tool = False
 
         if allow_shell:
             run_summary = _handle_run_command(response_text)
             if run_summary is not None:
                 history.append({"role": "system", "content": run_summary})
+                used_a_tool = True
+
+        if allow_search:
+            search_summary = _handle_search_query(response_text)
+            if search_summary is not None:
+                history.append({"role": "system", "content": search_summary})
+                used_a_tool = True
+
+        ip_summary = _handle_ip_query(response_text)
+        if ip_summary is not None:
+            history.append({"role": "system", "content": ip_summary})
+            used_a_tool = True
+
+        location_summary = _handle_location_query(response_text)
+        if location_summary is not None:
+            history.append({"role": "system", "content": location_summary})
+            used_a_tool = True
+
+        weather_summary = _handle_weather_query(response_text)
+        if weather_summary is not None:
+            history.append({"role": "system", "content": weather_summary})
+            used_a_tool = True
+
+        if used_a_tool:
+            followup_text = _generate_and_echo(backend, history, persona, max_tokens)
+            history.append({"role": "assistant", "content": followup_text})
 
 
 DEFAULT_MODEL = "gemma4-e2b"
@@ -209,6 +416,17 @@ def chat(
             ),
         ),
     ] = False,
+    allow_search: Annotated[
+        bool,
+        typer.Option(
+            "--allow-search",
+            help=(
+                "Permite que el modelo busque en internet (marcador SEARCH:) "
+                "en modo --interactive. Es de solo lectura, no requiere "
+                "confirmación manual."
+            ),
+        ),
+    ] = False,
     agent: AgentOption = None,
 ) -> None:
     """Envía un mensaje a un modelo (o abre un REPL con --interactive)."""
@@ -224,7 +442,15 @@ def chat(
 
     if interactive:
         _run_interactive(
-            backend, system, max_tokens, no_think, device, model, allow_shell, persona
+            backend,
+            system,
+            max_tokens,
+            no_think,
+            device,
+            model,
+            allow_shell,
+            allow_search,
+            persona,
         )
         return
 
