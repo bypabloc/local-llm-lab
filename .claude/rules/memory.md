@@ -42,6 +42,18 @@ Ver `tests/unit/test_memory_store.py` — el test
 `test_search_encuentra_hecho_con_pregunta_que_no_comparte_palabras_clave`
 es la garantía de que este caso no se rompe de nuevo.
 
+## Decisión de diseño: deduplicación exacta, no difusa
+
+El modelo a veces re-emite `REMEMBER:` con un hecho ya guardado en vez de
+usar el bloque de recall (comportamiento observado en la práctica con
+gemma4-e2b). `MemoryStore.save` deduplica por contenido normalizado
+(lowercase + espacios colapsados) contra una tabla auxiliar
+`memory_dedup` — FTS5 no soporta `UNIQUE` directamente. Se descartó
+similitud difusa (embeddings/fuzzy matching) por ahora: agrega
+complejidad y una dependencia nueva para un problema que la
+deduplicación exacta ya resuelve en la práctica, dado que el modelo
+tiende a repetir la misma frase casi literal, no a parafrasear.
+
 ## Flujo completo
 
 1. En modo `--interactive` (siempre activo, no hay flag para desactivarlo —

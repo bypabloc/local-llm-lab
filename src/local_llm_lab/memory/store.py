@@ -9,6 +9,10 @@ class MemoryEntry:
     created_at: str
 
 
+def _normalize(content: str) -> str:
+    return " ".join(content.lower().split())
+
+
 class MemoryStore:
     """Memoria persistente sobre SQLite + FTS5.
 
@@ -24,12 +28,27 @@ class MemoryStore:
             "CREATE VIRTUAL TABLE IF NOT EXISTS memory "
             "USING fts5(content, created_at UNINDEXED)"
         )
+        # ponytail: FTS5 no soporta UNIQUE — tabla normal aparte solo para
+        # deduplicar por contenido normalizado antes de insertar en memory.
+        self._connection.execute(
+            "CREATE TABLE IF NOT EXISTS memory_dedup (normalized TEXT PRIMARY KEY)"
+        )
         self._connection.commit()
 
     def save(self, content: str) -> None:
+        normalized = _normalize(content)
+        exists = self._connection.execute(
+            "SELECT 1 FROM memory_dedup WHERE normalized = ?", (normalized,)
+        ).fetchone()
+        if exists:
+            return
+
         self._connection.execute(
             "INSERT INTO memory (content, created_at) VALUES (?, datetime('now'))",
             (content,),
+        )
+        self._connection.execute(
+            "INSERT INTO memory_dedup (normalized) VALUES (?)", (normalized,)
         )
         self._connection.commit()
 
