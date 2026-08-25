@@ -258,7 +258,8 @@ def _ensure_searxng_running() -> None:
     except ImportError:
         typer.echo(
             ">>> aviso: no se pudo importar devtools/searxng "
-            "(¿corriste esto fuera del repo clonado?), sigo sin auto-levantar SearXNG"
+            "(¿corriste el comando fuera de la raíz del repo?), "
+            "sigo sin auto-levantar SearXNG"
         )
         return
 
@@ -305,11 +306,10 @@ def _run_interactive(
             f"--- chat interactivo con {model} [{device}] — 'exit' para salir ---",
         )
     )
-    if allow_shell:
-        typer.echo(">>> modo shell activo (comandos requieren tu confirmación)")
-    if allow_search:
-        typer.echo(">>> búsqueda web activa")
-    typer.echo(">>> IP/ubicación/clima disponible")
+    if not allow_shell:
+        typer.echo(">>> modo shell desactivado (--disable-shell)")
+    if not allow_search:
+        typer.echo(">>> búsqueda web desactivada (--disable-search)")
     effective_system = system
     tool_names = [
         "IP: — IP pública actual",
