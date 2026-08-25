@@ -79,3 +79,30 @@ def test_search_ignora_stopwords_para_no_traer_resultados_irrelevantes(
     results = store.search("clima en Santiago")
 
     assert results == []
+
+
+def test_save_no_duplica_un_hecho_identico(store: MemoryStore) -> None:
+    store.save("el usuario se llama Pablo")
+    store.save("el usuario se llama Pablo")
+
+    results = store.search("Pablo")
+
+    assert len(results) == 1
+
+
+def test_save_no_duplica_ignorando_mayusculas_y_espacios(store: MemoryStore) -> None:
+    store.save("El usuario se llama Pablo")
+    store.save("  el usuario se llama pablo  ")
+
+    results = store.search("Pablo")
+
+    assert len(results) == 1
+
+
+def test_save_permite_hechos_distintos(store: MemoryStore) -> None:
+    store.save("el usuario se llama Pablo")
+    store.save("el usuario prefiere respuestas concisas")
+
+    results = store.search("usuario")
+
+    assert len(results) == 2
