@@ -14,6 +14,15 @@ investigación que originó este proyecto: `.claude/rules/research-context.md`.
 Casos de uso reales de la comunidad que motivan hacia dónde llevar el
 proyecto: `.claude/rules/use-cases-research.md`.
 
+Además del CLI, el proyecto es un **mono-repo con UI de escritorio**
+multiplataforma (Windows/Linux/Mac): **Tauri v2 + React 19** como shell y
+frontend, con un **servidor Django** que expone la misma lógica del CLI vía
+HTTP + SSE, lanzado por Tauri como sidecar empaquetado (PyInstaller). El
+CLI original (`llm-lab chat/bench/list`) sigue existiendo y funcionando sin
+cambios — la UI es una segunda forma de usar el mismo `src/core/`, no un
+reemplazo. Contexto completo de esta arquitectura, decisiones de diseño y
+bugs reales ya resueltos: `.claude/rules/ui-stack-architecture.md`.
+
 ## Hardware de referencia (donde se validó el proyecto)
 
 RTX 4060 Laptop (8GB VRAM), 18 cores CPU, 32GB RAM. `llama-cpp-python`
@@ -32,6 +41,8 @@ Ver en detalle: `.claude/rules/`
 - `use-cases-research.md` — investigación de comunidad sobre para qué se usan realmente los LLMs locales, y qué features priorizar en este proyecto en base a eso
 - `shell-execution.md` — diseño y capas de seguridad de la ejecución de comandos vía `--allow-shell`
 - `memory.md` — diseño de la memoria persistente del chat (`REMEMBER:`), por qué SQLite+FTS5 y no un grafo
+- `ui-stack-architecture.md` — mono-repo Tauri v2 + React 19 + Django: por qué, estructura, contrato HTTP/SSE, decisiones de diseño y bugs reales ya resueltos (leer antes de tocar `ui/`, `server/` o `src-tauri/`)
+- `frontend-style.md` — convenciones TypeScript/React de `ui/`, incluyendo el bug real de closures impuros en `setState` y cómo evitarlo
 
 ## Principios no negociables
 
@@ -43,10 +54,10 @@ Ver en detalle: `.claude/rules/`
 6. **Archivos temporales** en `./tmp/` del proyecto (gitignoreado), nunca en `/tmp/` del sistema.
 7. **Sin comentarios explicativos de "qué hace el código"** — nombres claros lo dicen. Comentarios solo para el "por qué" no obvio (ver regla global).
 
-## Comandos
+## Comandos — CLI y core (`src/core/`)
 
 ```bash
-uv sync                          # instalar dependencias
+uv sync                          # instalar dependencias (solo paquete core)
 uv run pytest                    # correr tests
 uv run ruff check .              # lint
 uv run ruff format .             # formato
@@ -63,14 +74,44 @@ Recompilar `llama-cpp-python` con CUDA si `--device gpu` falla con
 CMAKE_ARGS="-DGGML_CUDA=on" uv pip install llama-cpp-python --force-reinstall --no-cache-dir
 ```
 
+## Comandos — stack de UI (`ui/`, `server/`, `src-tauri/`)
+
+Ver `.claude/rules/ui-stack-architecture.md` para el detalle completo
+(prerequisitos de sistema, arquitectura, decisiones de diseño). Resumen:
+
+```bash
+uv sync --all-packages           # instala core + server (uv sync solo NO alcanza)
+pnpm install                     # dependencias de ui/
+
+# Server Django solo (dev)
+PYTHONPATH="src:server" uv run daphne -b 127.0.0.1 -p 8000 server.asgi:application
+
+# Frontend solo
+pnpm --filter ui dev
+
+# App Tauri completa (lanza Vite + sidecar automáticamente)
+pnpm tauri dev
+
+# Tests de este stack
+uv run pytest                              # incluye server/llm/tests/
+pnpm --filter ui exec tsc -b                # typecheck frontend
+pnpm --filter ui run lint                   # oxlint
+pnpm --filter ui exec playwright test       # e2e contra backend real, sin mocks
+
+# Sidecar (PyInstaller) — regenerar tras tocar server/ o src/core/
+cd server && ./build_sidecar.sh
+```
+
 ## Pre-commit checklist de este repo
 
-- [ ] `uv run pytest` — 100% passing
+- [ ] `uv run pytest` — 100% passing (cubre `src/core/` y `server/`)
 - [ ] `uv run ruff check .` — sin errores
 - [ ] `uv run ruff format --check .` — sin diffs pendientes
-- [ ] `uv run mypy src` — sin errores
+- [ ] `uv run mypy src server` — sin errores
 - [ ] Archivos temporales en `./tmp/`, no en `/tmp/`
 - [ ] Modelos GGUF nuevos documentados en `src/core/config/models.toml`, no hardcodeados en código
+- [ ] Si se tocó `ui/`: `pnpm --filter ui exec tsc -b` y `pnpm --filter ui run lint` sin errores
+- [ ] Si se tocó `ui/`, `server/` o `src-tauri/`: verificación end-to-end con modelo real (no solo `FakeBackend`) — ver checklist completo en `.claude/rules/ui-stack-architecture.md`
 
 ## Convención de modelos
 
