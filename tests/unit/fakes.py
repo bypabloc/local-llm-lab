@@ -1,8 +1,8 @@
 from collections.abc import Iterator
 from pathlib import Path
 
-from local_llm_lab.backends.protocol import ChatMessage, GenerationResult
-from local_llm_lab.config.models import ModelConfig
+from core.backends.protocol import ChatMessage, GenerationResult
+from core.config.models import ModelConfig
 
 
 class FakeBackend:

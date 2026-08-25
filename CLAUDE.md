@@ -30,6 +30,8 @@ Ver en detalle: `.claude/rules/`
 - `testing.md` — TDD, qué se mockea y qué no, estructura de tests
 - `research-context.md` — resumen de la investigación de modelos/hardware que da contexto a las decisiones del proyecto
 - `use-cases-research.md` — investigación de comunidad sobre para qué se usan realmente los LLMs locales, y qué features priorizar en este proyecto en base a eso
+- `shell-execution.md` — diseño y capas de seguridad de la ejecución de comandos vía `--allow-shell`
+- `memory.md` — diseño de la memoria persistente del chat (`REMEMBER:`), por qué SQLite+FTS5 y no un grafo
 
 ## Principios no negociables
 
@@ -68,12 +70,12 @@ CMAKE_ARGS="-DGGML_CUDA=on" uv pip install llama-cpp-python --force-reinstall --
 - [ ] `uv run ruff format --check .` — sin diffs pendientes
 - [ ] `uv run mypy src` — sin errores
 - [ ] Archivos temporales en `./tmp/`, no en `/tmp/`
-- [ ] Modelos GGUF nuevos documentados en `src/local_llm_lab/config/models.toml`, no hardcodeados en código
+- [ ] Modelos GGUF nuevos documentados en `src/core/config/models.toml`, no hardcodeados en código
 
 ## Convención de modelos
 
 Cada modelo soportado se declara como entrada en
-`src/local_llm_lab/config/models.toml` (nombre lógico, path relativo a
+`src/core/config/models.toml` (nombre lógico, path relativo a
 `models/`, contexto máximo, parámetros de carga). El router resuelve el
 nombre lógico a esa config — nunca se hardcodea un path de modelo dentro del
 código del router o del CLI.

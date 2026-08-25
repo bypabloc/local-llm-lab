@@ -2,8 +2,8 @@ import dataclasses
 
 import pytest
 
-from local_llm_lab.backends.errors import BackendLoadError
-from local_llm_lab.backends.llama_cpp_backend import LlamaCppBackend
+from core.backends.errors import BackendLoadError
+from core.backends.llama_cpp_backend import LlamaCppBackend
 from tests.unit.fakes import make_model_config
 
 

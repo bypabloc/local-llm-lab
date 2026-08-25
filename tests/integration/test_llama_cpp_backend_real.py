@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from local_llm_lab.backends.llama_cpp_backend import LlamaCppBackend
-from local_llm_lab.config.models import load_model_configs
+from core.backends.llama_cpp_backend import LlamaCppBackend
+from core.config.models import load_model_configs
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
