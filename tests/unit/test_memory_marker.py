@@ -1,4 +1,4 @@
-from local_llm_lab.memory.marker import extract_remember_note
+from core.memory.marker import extract_remember_note
 
 
 def test_extract_remember_note_encuentra_el_marcador() -> None:

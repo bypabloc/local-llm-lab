@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from local_llm_lab.config.dotenv import load_dotenv
+from core.config.dotenv import load_dotenv
 
 
 def test_load_dotenv_setea_variables_del_archivo(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]

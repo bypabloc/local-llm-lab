@@ -70,12 +70,12 @@ CMAKE_ARGS="-DGGML_CUDA=on" uv pip install llama-cpp-python --force-reinstall --
 - [ ] `uv run ruff format --check .` — sin diffs pendientes
 - [ ] `uv run mypy src` — sin errores
 - [ ] Archivos temporales en `./tmp/`, no en `/tmp/`
-- [ ] Modelos GGUF nuevos documentados en `src/local_llm_lab/config/models.toml`, no hardcodeados en código
+- [ ] Modelos GGUF nuevos documentados en `src/core/config/models.toml`, no hardcodeados en código
 
 ## Convención de modelos
 
 Cada modelo soportado se declara como entrada en
-`src/local_llm_lab/config/models.toml` (nombre lógico, path relativo a
+`src/core/config/models.toml` (nombre lógico, path relativo a
 `models/`, contexto máximo, parámetros de carga). El router resuelve el
 nombre lógico a esa config — nunca se hardcodea un path de modelo dentro del
 código del router o del CLI.

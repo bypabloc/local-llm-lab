@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from local_llm_lab.memory.store import MemoryStore
+from core.memory.store import MemoryStore
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 
-from local_llm_lab.shell.blocklist import is_blocked, parse_shell_safe
+from core.shell.blocklist import is_blocked, parse_shell_safe
 
 _RUN_PATTERN = re.compile(r"^RUN:[ \t]*(\S.*)?$", re.MULTILINE)
 

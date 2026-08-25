@@ -1,6 +1,6 @@
 from importlib import resources
 
-_PACKAGE = "local_llm_lab.config.tools"
+_PACKAGE = "core.config.tools"
 
 
 def load_tool_prompt(name: str) -> str:

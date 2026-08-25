@@ -1,6 +1,6 @@
 import pytest
 
-from local_llm_lab.personalities import (
+from core.personalities import (
     DEFAULT_AGENT,
     UnknownAgentError,
     get_persona,

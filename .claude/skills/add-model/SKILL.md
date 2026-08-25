@@ -10,7 +10,7 @@ description: Agrega un modelo GGUF nuevo al router de local-llm-lab (entrada en 
 2. Verificar que el modelo respete las reglas de `.claude/rules/research-context.md`:
    licencia permisiva (Apache 2.0 / MIT preferido), tamaño razonable para
    CPU (~2-9GB en Q4), contexto declarado.
-3. Agregar entrada en `src/local_llm_lab/config/models.toml`:
+3. Agregar entrada en `src/core/config/models.toml`:
    ```toml
    [models.<nombre-logico>]
    path = "models/<archivo>.gguf"

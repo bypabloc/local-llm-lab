@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-from local_llm_lab.cli.main import _REPO_ROOT, _ensure_searxng_running
+from core.cli.main import _REPO_ROOT, _ensure_searxng_running
 
 
 def test_repo_root_apunta_a_la_raiz_del_repo_donde_vive_devtools() -> None:
@@ -32,7 +32,7 @@ def test_ensure_searxng_running_importa_devtools_sin_repo_root_en_syspath() -> N
         "import sys; "
         f"sys.path = [p for p in sys.path if p != {str(_REPO_ROOT)!r}]; "
         "import os; os.environ['SEARXNG_URL'] = 'http://localhost:1'; "
-        "from local_llm_lab.cli.main import _ensure_searxng_running; "
+        "from core.cli.main import _ensure_searxng_running; "
         "_ensure_searxng_running()"
     )
     result = subprocess.run(

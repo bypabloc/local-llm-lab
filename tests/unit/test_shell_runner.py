@@ -1,4 +1,4 @@
-from local_llm_lab.shell.runner import extract_run_command, run_with_confirmation
+from core.shell.runner import extract_run_command, run_with_confirmation
 
 
 def test_extract_run_command_encuentra_marcador() -> None:

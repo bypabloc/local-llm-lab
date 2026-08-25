@@ -1,7 +1,7 @@
 # Memoria persistente del chat (`REMEMBER:`)
 
 Contexto de por qué existe y cómo está diseñada — leer antes de tocar
-`src/local_llm_lab/memory/`.
+`src/core/memory/`.
 
 ## Por qué existe
 

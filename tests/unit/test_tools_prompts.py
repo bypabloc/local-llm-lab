@@ -1,6 +1,6 @@
 import pytest
 
-from local_llm_lab.config.tools import load_tool_prompt
+from core.config.tools import load_tool_prompt
 
 
 def test_load_tool_prompt_shell_menciona_run() -> None:

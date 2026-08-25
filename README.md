@@ -46,12 +46,12 @@ uv run llm-lab chat --model gemma4-e2b --device gpu --interactive --allow-shell 
 
 El tono de respuesta se controla con `--agent` (o la variable de entorno
 `LLM_LAB_AGENT`): `jarvis`, `tars` o `gemma` (default, neutral). Ver
-`src/local_llm_lab/personas/`.
+`src/core/personas/`.
 
 ## Estructura
 
 ```
-src/local_llm_lab/
+src/core/
   router/       # LLMRouter: selecciona backend+modelo por nombre lógico
   backends/     # Adaptadores por runtime (llama_cpp hoy; extensible a otros)
   benchmark/    # Medición de tok/s, prefill, uso de memoria

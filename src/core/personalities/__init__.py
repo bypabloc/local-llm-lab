@@ -4,7 +4,7 @@ from importlib import resources
 
 DEFAULT_AGENT = "gemma"
 _AGENT_ENV_VAR = "LLM_LAB_AGENT"
-_PACKAGE = "local_llm_lab.personalities"
+_PACKAGE = "core.personalities"
 
 _BANNER_PREFIXES = {
     "jarvis": "J.A.R.V.I.S. — ",

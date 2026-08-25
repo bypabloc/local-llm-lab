@@ -1,7 +1,7 @@
 import json
 from urllib.error import URLError
 
-from local_llm_lab.shell.web_search import extract_search_query, search_web
+from core.shell.web_search import extract_search_query, search_web
 
 _TAVILY_PAYLOAD = {
     "results": [
@@ -97,7 +97,7 @@ def test_search_web_tavily_parsea_resultados(monkeypatch) -> None:  # type: igno
     _clear_provider_env(monkeypatch)
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake-key")
     monkeypatch.setattr(
-        "local_llm_lab.shell.web_search.urlopen",
+        "core.shell.web_search.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps(_TAVILY_PAYLOAD).encode("utf-8")),
     )
 
@@ -115,7 +115,7 @@ def test_search_web_tavily_limita_a_max_results(monkeypatch) -> None:  # type: i
     _clear_provider_env(monkeypatch)
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake-key")
     monkeypatch.setattr(
-        "local_llm_lab.shell.web_search.urlopen",
+        "core.shell.web_search.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps(_TAVILY_PAYLOAD).encode("utf-8")),
     )
 
@@ -128,7 +128,7 @@ def test_search_web_tavily_sin_resultados_no_es_error(monkeypatch) -> None:  # t
     _clear_provider_env(monkeypatch)
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake-key")
     monkeypatch.setattr(
-        "local_llm_lab.shell.web_search.urlopen",
+        "core.shell.web_search.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps({"results": []}).encode()),
     )
 
@@ -142,7 +142,7 @@ def test_search_web_tavily_maneja_json_invalido(monkeypatch) -> None:  # type: i
     _clear_provider_env(monkeypatch)
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake-key")
     monkeypatch.setattr(
-        "local_llm_lab.shell.web_search.urlopen",
+        "core.shell.web_search.urlopen",
         lambda *a, **k: _FakeResponse(b"no es json"),
     )
 
@@ -156,7 +156,7 @@ def test_search_web_searxng_parsea_resultados(monkeypatch) -> None:  # type: ign
     _clear_provider_env(monkeypatch)
     monkeypatch.setenv("SEARXNG_URL", "http://localhost:8888")
     monkeypatch.setattr(
-        "local_llm_lab.shell.web_search.urlopen",
+        "core.shell.web_search.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps(_SEARXNG_PAYLOAD).encode("utf-8")),
     )
 
@@ -183,7 +183,7 @@ def test_search_web_prioriza_tavily_sobre_searxng_si_ambos_configurados(
         return _FakeResponse(json.dumps(_TAVILY_PAYLOAD).encode("utf-8"))
 
     monkeypatch.setattr(
-        "local_llm_lab.shell.web_search.urlopen",
+        "core.shell.web_search.urlopen",
         _fake_urlopen,
     )
 
@@ -206,7 +206,7 @@ def test_search_web_cae_a_searxng_si_tavily_falla_y_no_hay_provider_explicito(
             raise URLError("tavily caído")
         return _FakeResponse(json.dumps(_SEARXNG_PAYLOAD).encode("utf-8"))
 
-    monkeypatch.setattr("local_llm_lab.shell.web_search.urlopen", _fake_urlopen)
+    monkeypatch.setattr("core.shell.web_search.urlopen", _fake_urlopen)
 
     outcome = search_web("algo")
 
@@ -228,7 +228,7 @@ def test_search_web_provider_explicito_searxng_prioriza_searxng(
         calls.append(request.full_url)  # type: ignore[attr-defined]
         return _FakeResponse(json.dumps(_SEARXNG_PAYLOAD).encode("utf-8"))
 
-    monkeypatch.setattr("local_llm_lab.shell.web_search.urlopen", _fake_urlopen)
+    monkeypatch.setattr("core.shell.web_search.urlopen", _fake_urlopen)
 
     outcome = search_web("algo")
 
@@ -254,7 +254,7 @@ def test_search_web_maneja_timeout(monkeypatch) -> None:  # type: ignore[no-unty
     def _raise(*args: object, **kwargs: object) -> None:
         raise TimeoutError("timed out")
 
-    monkeypatch.setattr("local_llm_lab.shell.web_search.urlopen", _raise)
+    monkeypatch.setattr("core.shell.web_search.urlopen", _raise)
 
     outcome = search_web("algo", timeout_seconds=1)
 

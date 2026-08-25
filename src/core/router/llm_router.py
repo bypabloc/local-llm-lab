@@ -1,8 +1,8 @@
 from collections.abc import Callable
 
-from local_llm_lab.backends.protocol import LLMBackend
-from local_llm_lab.config.models import ModelConfig
-from local_llm_lab.router.errors import ModelNotFoundError
+from core.backends.protocol import LLMBackend
+from core.config.models import ModelConfig
+from core.router.errors import ModelNotFoundError
 
 BackendFactory = Callable[[ModelConfig], LLMBackend]
 

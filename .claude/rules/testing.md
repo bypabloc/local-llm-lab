@@ -31,7 +31,7 @@ def test_genera_respuesta_con_modelo_real() -> None: ...
 
 ## Cobertura
 
-- Mínimo 80% en `src/local_llm_lab/router/`, `backends/`, `benchmark/`
+- Mínimo 80% en `src/core/router/`, `backends/`, `benchmark/`
   (la lógica que decide y mide, no el CLI de parsing de argv que es
   mayormente I/O).
 - No perseguir 100% en `cli/` — el valor ahí está en tests de integración
@@ -50,5 +50,5 @@ def test_genera_respuesta_con_modelo_real() -> None: ...
 uv run pytest                    # todo
 uv run pytest tests/unit         # solo unit, rápido, sin modelos reales
 uv run pytest tests/integration  # requiere modelos descargados, más lento
-uv run pytest --cov=src/local_llm_lab --cov-report=term-missing
+uv run pytest --cov=src/core --cov-report=term-missing
 ```
