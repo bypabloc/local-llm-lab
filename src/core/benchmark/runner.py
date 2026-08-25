@@ -1,7 +1,7 @@
 import time
 from dataclasses import dataclass
 
-from local_llm_lab.backends.protocol import LLMBackend
+from core.backends.protocol import LLMBackend
 
 # Umbrales de .claude/rules/research-context.md
 FLUENT_TOK_S = 10.0

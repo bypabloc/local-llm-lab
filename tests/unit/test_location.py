@@ -1,6 +1,6 @@
 import json
 
-from local_llm_lab.shell.location import (
+from core.shell.location import (
     LocationOutcome,
     extract_ip_query,
     extract_location_query,
@@ -90,7 +90,7 @@ def test_extract_weather_query_no_dispara_con_marcador_ip() -> None:
 
 def test_get_public_ip_parsea_respuesta(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(
-        "local_llm_lab.shell.location.urlopen",
+        "core.shell.location.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps(_IP_PAYLOAD).encode("utf-8")),
     )
 
@@ -104,7 +104,7 @@ def test_get_public_ip_maneja_error_de_red(monkeypatch) -> None:  # type: ignore
     def _raise(*args: object, **kwargs: object) -> None:
         raise TimeoutError("timed out")
 
-    monkeypatch.setattr("local_llm_lab.shell.location.urlopen", _raise)
+    monkeypatch.setattr("core.shell.location.urlopen", _raise)
 
     outcome = get_public_ip()
 
@@ -114,7 +114,7 @@ def test_get_public_ip_maneja_error_de_red(monkeypatch) -> None:  # type: ignore
 
 def test_get_location_usa_ip_dada_y_parsea_ciudad(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(
-        "local_llm_lab.shell.location.urlopen",
+        "core.shell.location.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps(_LOCATION_PAYLOAD).encode("utf-8")),
     )
 
@@ -129,7 +129,7 @@ def test_get_location_usa_ip_dada_y_parsea_ciudad(monkeypatch) -> None:  # type:
 
 def test_get_location_falla_si_status_no_es_success(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(
-        "local_llm_lab.shell.location.urlopen",
+        "core.shell.location.urlopen",
         lambda *a, **k: _FakeResponse(
             json.dumps({"status": "fail", "message": "invalid query"}).encode("utf-8")
         ),
@@ -151,7 +151,7 @@ def test_get_location_resuelve_ip_propia_si_no_se_pasa(monkeypatch) -> None:  # 
             return _FakeResponse(json.dumps(_LOCATION_PAYLOAD).encode("utf-8"))
         return _FakeResponse(json.dumps(_IP_PAYLOAD).encode("utf-8"))
 
-    monkeypatch.setattr("local_llm_lab.shell.location.urlopen", _fake_urlopen)
+    monkeypatch.setattr("core.shell.location.urlopen", _fake_urlopen)
 
     outcome = get_location(ip=None)
 
@@ -164,7 +164,7 @@ def test_get_location_propaga_error_si_no_pudo_resolver_ip(monkeypatch) -> None:
     def _raise(*args: object, **kwargs: object) -> None:
         raise TimeoutError("timed out")
 
-    monkeypatch.setattr("local_llm_lab.shell.location.urlopen", _raise)
+    monkeypatch.setattr("core.shell.location.urlopen", _raise)
 
     outcome = get_location(ip=None)
 
@@ -173,7 +173,7 @@ def test_get_location_propaga_error_si_no_pudo_resolver_ip(monkeypatch) -> None:
 
 def test_get_weather_parsea_temperatura(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(
-        "local_llm_lab.shell.location.urlopen",
+        "core.shell.location.urlopen",
         lambda *a, **k: _FakeResponse(json.dumps(_WEATHER_PAYLOAD).encode("utf-8")),
     )
 
@@ -186,7 +186,7 @@ def test_get_weather_parsea_temperatura(monkeypatch) -> None:  # type: ignore[no
 
 def test_get_weather_maneja_json_invalido(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(
-        "local_llm_lab.shell.location.urlopen",
+        "core.shell.location.urlopen",
         lambda *a, **k: _FakeResponse(b"no es json"),
     )
 
@@ -207,9 +207,9 @@ def test_get_weather_para_ubicacion_actual_encadena_ip_location_y_clima(
             return _FakeResponse(json.dumps(_IP_PAYLOAD).encode("utf-8"))
         return _FakeResponse(json.dumps(_WEATHER_PAYLOAD).encode("utf-8"))
 
-    monkeypatch.setattr("local_llm_lab.shell.location.urlopen", _fake_urlopen)
+    monkeypatch.setattr("core.shell.location.urlopen", _fake_urlopen)
 
-    from local_llm_lab.shell.location import get_weather_for_current_location
+    from core.shell.location import get_weather_for_current_location
 
     outcome = get_weather_for_current_location()
 

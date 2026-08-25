@@ -1,7 +1,7 @@
 import pytest
 
-from local_llm_lab.router.errors import ModelNotFoundError
-from local_llm_lab.router.llm_router import LLMRouter
+from core.router.errors import ModelNotFoundError
+from core.router.llm_router import LLMRouter
 from tests.unit.fakes import FakeBackend, make_model_config
 
 

@@ -1,6 +1,6 @@
 import pytest
 
-from local_llm_lab.shell.blocklist import is_blocked
+from core.shell.blocklist import is_blocked
 
 BLOCKED_COMMANDS = [
     "rm -rf /",

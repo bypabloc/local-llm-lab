@@ -6,23 +6,23 @@ from typing import Annotated
 
 import typer
 
-from local_llm_lab.backends.errors import BackendLoadError
-from local_llm_lab.backends.llama_cpp_backend import LlamaCppBackend
-from local_llm_lab.backends.protocol import ChatMessage, LLMBackend
-from local_llm_lab.benchmark.runner import run_benchmark
-from local_llm_lab.config.dotenv import load_dotenv
-from local_llm_lab.config.models import load_model_configs
-from local_llm_lab.config.tools import load_tool_prompt
-from local_llm_lab.memory import MemoryStore, extract_remember_note
-from local_llm_lab.personalities import (
+from core.backends.errors import BackendLoadError
+from core.backends.llama_cpp_backend import LlamaCppBackend
+from core.backends.protocol import ChatMessage, LLMBackend
+from core.benchmark.runner import run_benchmark
+from core.config.dotenv import load_dotenv
+from core.config.models import load_model_configs
+from core.config.tools import load_tool_prompt
+from core.memory import MemoryStore, extract_remember_note
+from core.personalities import (
     Persona,
     get_persona,
     resolve_agent_name,
     wrap_banner,
 )
-from local_llm_lab.router.errors import ModelNotFoundError
-from local_llm_lab.router.llm_router import LLMRouter
-from local_llm_lab.shell.location import (
+from core.router.errors import ModelNotFoundError
+from core.router.llm_router import LLMRouter
+from core.shell.location import (
     extract_ip_query,
     extract_location_query,
     extract_weather_query,
@@ -30,8 +30,8 @@ from local_llm_lab.shell.location import (
     get_public_ip,
     get_weather_for_current_location,
 )
-from local_llm_lab.shell.runner import extract_run_command, run_with_confirmation
-from local_llm_lab.shell.web_search import extract_search_query, search_web
+from core.shell.runner import extract_run_command, run_with_confirmation
+from core.shell.web_search import extract_search_query, search_web
 
 load_dotenv(Path.cwd() / ".env")
 

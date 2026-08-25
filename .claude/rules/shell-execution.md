@@ -1,7 +1,7 @@
 # Ejecución de comandos de shell desde el chat (`--allow-shell`)
 
 Contexto de por qué existe esta feature y cómo está protegida — leer antes
-de tocar `src/local_llm_lab/shell/` o el flujo `--allow-shell` en el CLI.
+de tocar `src/core/shell/` o el flujo `--allow-shell` en el CLI.
 
 ## Por qué existe
 
@@ -34,7 +34,7 @@ decisión de seguridad deliberada, no un default arbitrario.
 
 ## Las dos capas de protección (ninguna es saltable por la otra)
 
-1. **Blocklist** (`src/local_llm_lab/shell/blocklist.py`) — se evalúa
+1. **Blocklist** (`src/core/shell/blocklist.py`) — se evalúa
    *antes* de pedir confirmación. Si el comando matchea, se bloquea sin
    preguntar nada, sin importar qué responda el usuario después. Ver el test
    `test_run_with_confirmation_bloquea_comando_peligroso_aunque_confirm_sea_true`

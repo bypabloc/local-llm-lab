@@ -1,4 +1,4 @@
-from local_llm_lab.benchmark.runner import run_benchmark
+from core.benchmark.runner import run_benchmark
 from tests.unit.fakes import FakeBackend, make_model_config
 
 

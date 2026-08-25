@@ -2,9 +2,9 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from local_llm_lab.backends.errors import BackendLoadError
-from local_llm_lab.backends.protocol import ChatMessage, GenerationResult
-from local_llm_lab.config.models import ModelConfig
+from core.backends.errors import BackendLoadError
+from core.backends.protocol import ChatMessage, GenerationResult
+from core.config.models import ModelConfig
 
 
 class LlamaCppBackend:

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from local_llm_lab.config.models import load_model_configs
+from core.config.models import load_model_configs
 
 
 def test_load_model_configs_lee_toml_real() -> None:

@@ -38,7 +38,7 @@ UPPER_SNAKE_CASE          # constantes de módulo
 
 - Un archivo por responsabilidad clara (`router.py`, `llama_cpp_backend.py`,
   `token_counter.py`), no un `utils.py` general.
-- Imports absolutos dentro de `local_llm_lab` (`from local_llm_lab.router
+- Imports absolutos dentro de `core` (`from core.router
   import LLMRouter`), nunca relativos con `..`.
 
 ## Errores y validación
