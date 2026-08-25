@@ -7,6 +7,16 @@
   ],
   "permissions": [
     "core:default",
+    "dialog:allow-save",
+    "fs:allow-write-text-file",
+    "opener:default",
+    "process:default",
+    "notification:default",
+    "os:default",
+    "window-state:default",
+    "deep-link:default",
+    "autostart:default",
+    "global-shortcut:default",
     {
       "identifier": "shell:allow-execute",
       "allow": [

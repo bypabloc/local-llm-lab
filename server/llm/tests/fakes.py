@@ -1,3 +1,4 @@
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,6 +16,7 @@ class FakeBackend:
     calls: list[tuple[str, str]] = field(default_factory=list)
     stream_calls: list[list[ChatMessage]] = field(default_factory=list)
     closed: bool = False
+    stream_delay_seconds: float = 0.0
 
     def generate(
         self, system: str, user: str, max_tokens: int, no_think: bool = False
@@ -30,7 +32,10 @@ class FakeBackend:
         self, messages: list[ChatMessage], max_tokens: int
     ) -> Iterator[str]:
         self.stream_calls.append(list(messages))
-        yield from self.reply
+        for char in self.reply:
+            if self.stream_delay_seconds:
+                time.sleep(self.stream_delay_seconds)
+            yield char
 
     def count_tokens(self, text: str) -> int:
         return len(text.split())

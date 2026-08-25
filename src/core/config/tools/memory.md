@@ -18,6 +18,7 @@ DO NOT save when:
 
 Examples:
 - user says "my name is Pablo" → REMEMBER: The user's name is Pablo.
+- you just asked (or the user asked you) "what's my name?", you answered you don't know, and the user then replies with just "Pablo" → REMEMBER: The user's name is Pablo. (a short reply that answers a question you or the user just asked about them is still a personal fact — do not require the full sentence "my name is X")
 - user says "I'm a nurse and I work night shifts" → REMEMBER: The user is a nurse who works night shifts.
 - user says "please always answer in one paragraph" → REMEMBER: The user prefers answers in a single paragraph.
 - user says "what's the weather like?" → do not save anything, this is a question

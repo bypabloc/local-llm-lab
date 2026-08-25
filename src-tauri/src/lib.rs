@@ -29,9 +29,44 @@ fn wait_for_port(port: u16, timeout: Duration) -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    // single-instance debe ser el primer plugin registrado (requisito de Tauri).
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+        }));
+    }
+
+    builder
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_os::init())
+        // ponytail: tauri-plugin-updater se deja como dependencia sin
+        // registrar — requiere `plugins.updater.endpoints`/`pubkey` reales
+        // en tauri.conf.json (servidor de releases firmado), que no existe
+        // todavía. Registrarlo sin esa config paniquea en runtime. Activar
+        // cuando haya un pipeline de releases: agregar `.plugin(tauri_plugin_updater::Builder::new().build())`
+        // + la sección `plugins.updater` en tauri.conf.json.
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .setup(|app| {
+            #[cfg(desktop)]
+            {
+                app.handle().plugin(tauri_plugin_deep_link::init())?;
+                app.handle().plugin(tauri_plugin_autostart::init(
+                    tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+                    None,
+                ))?;
+                app.handle()
+                    .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
+            }
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
