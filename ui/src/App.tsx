@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { AppToolbar } from "./components/AppToolbar"
 import { BenchView } from "./components/BenchView"
 import { ChatPanel } from "./components/ChatPanel"
 import { Sidebar } from "./components/Sidebar"
@@ -23,19 +24,26 @@ export default function App() {
   const chat = useChatStream(settings)
 
   return (
-    <div className="app">
-      <Sidebar
-        models={models}
-        settings={settings}
-        onChange={setSettings}
-        onOpenBench={() => setShowBench(true)}
-      />
-      {error && <div className="app__error">No se pudo conectar al server: {error}</div>}
-      {showBench ? (
-        <BenchView models={models} onClose={() => setShowBench(false)} />
-      ) : (
-        <ChatPanel chat={chat} />
-      )}
+    <div className="flex h-screen flex-col bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+      <AppToolbar />
+      <div className="relative flex flex-1 min-h-0">
+        <Sidebar
+          models={models}
+          settings={settings}
+          onChange={setSettings}
+          onOpenBench={() => setShowBench(true)}
+        />
+        {error && (
+          <div className="absolute inset-x-0 top-0 z-10 bg-red-600 px-3 py-2 text-sm text-white">
+            No se pudo conectar al server: {error}
+          </div>
+        )}
+        {showBench ? (
+          <BenchView models={models} onClose={() => setShowBench(false)} />
+        ) : (
+          <ChatPanel chat={chat} />
+        )}
+      </div>
     </div>
   )
 }

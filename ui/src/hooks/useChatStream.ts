@@ -27,6 +27,10 @@ function makeId(): string {
   return `msg-${nextId}`
 }
 
+function formatConversation(messages: DisplayMessage[]): string {
+  return messages.map((m) => `[${m.role}]\n${m.content}`).join("\n\n")
+}
+
 export function useChatStream(settings: ChatSettings) {
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
@@ -132,5 +136,52 @@ export function useChatStream(settings: ChatSettings) {
     ])
   }, [pendingRun])
 
-  return { messages, send, isStreaming, pendingRun, approveRun, rejectRun, tokensPerSecond }
+  const newConversation = useCallback(() => {
+    historyRef.current = []
+    setMessages([])
+    setPendingRun(null)
+    setTokensPerSecond(null)
+  }, [])
+
+  const copyConversation = useCallback(async () => {
+    await navigator.clipboard.writeText(formatConversation(messages))
+  }, [messages])
+
+  const exportConversation = useCallback(async () => {
+    const text = formatConversation(messages)
+    const filename = `local-llm-lab-chat-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`
+
+    const w = window as unknown as { __TAURI_INTERNALS__?: unknown }
+    if (w.__TAURI_INTERNALS__ === undefined) {
+      const blob = new Blob([text], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    const { save } = await import("@tauri-apps/plugin-dialog")
+    const { writeTextFile } = await import("@tauri-apps/plugin-fs")
+    const path = await save({ defaultPath: filename })
+    if (path === null) return
+    await writeTextFile(path, text)
+  }, [messages])
+
+  return {
+    messages,
+    send,
+    isStreaming,
+    pendingRun,
+    approveRun,
+    rejectRun,
+    tokensPerSecond,
+    newConversation,
+    exportConversation,
+    copyConversation,
+  }
 }

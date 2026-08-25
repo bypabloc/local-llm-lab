@@ -117,7 +117,7 @@ async def _chat_event_stream(
             asyncio.run_coroutine_threadsafe(queue.put(asdict(event)), loop)
         asyncio.run_coroutine_threadsafe(queue.put(None), loop)
 
-    await loop.run_in_executor(None, produce)
+    loop.run_in_executor(None, produce)
 
     while True:
         event = await queue.get()
