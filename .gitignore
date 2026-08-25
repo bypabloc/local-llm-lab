@@ -12,3 +12,4 @@ models/.cache/
 htmlcov/
 .env*
 .vscode/
+data/*.db

@@ -13,6 +13,7 @@ from local_llm_lab.benchmark.runner import run_benchmark
 from local_llm_lab.config.dotenv import load_dotenv
 from local_llm_lab.config.models import load_model_configs
 from local_llm_lab.config.tools import load_tool_prompt
+from local_llm_lab.memory import MemoryStore, extract_remember_note
 from local_llm_lab.personalities import (
     Persona,
     get_persona,
@@ -242,6 +243,36 @@ def _handle_weather_query(response_text: str) -> str | None:
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+_MEMORY_DB_PATH = _REPO_ROOT / "data" / "memory.db"
+
+
+def _handle_remember_note(response_text: str, store: MemoryStore) -> str | None:
+    """Si `response_text` propone guardar un hecho vía REMEMBER:, lo persiste.
+
+    Devuelve un resumen para inyectar de vuelta al historial (rol system),
+    o None si no había marcador. Es local, no requiere confirmación manual.
+    """
+    note = extract_remember_note(response_text)
+    if note is None:
+        return None
+
+    store.save(note)
+    typer.echo(f"\n>>> memoria guardada: {note}")
+    return f"[guardado en memoria: {note}]"
+
+
+def _recall_relevant_memories(user_input: str, store: MemoryStore) -> str | None:
+    """Busca hechos guardados relacionados con `user_input`.
+
+    Devuelve un resumen para inyectar como mensaje system antes del turno del
+    usuario, o None si no hay coincidencias — así el modelo puede responder
+    con lo que ya sabe antes de recurrir a una tool.
+    """
+    entries = store.search(user_input, limit=3)
+    if not entries:
+        return None
+    formatted = "\n".join(f"- {entry.content}" for entry in entries)
+    return f"[recordás esto sobre el usuario:\n{formatted}]"
 
 
 def _ensure_searxng_running() -> None:
@@ -309,6 +340,8 @@ def _run_interactive(
     if allow_search:
         _ensure_searxng_running()
 
+    memory_store = MemoryStore(_MEMORY_DB_PATH)
+
     typer.echo(
         wrap_banner(
             persona,
@@ -324,6 +357,7 @@ def _run_interactive(
         "IP: — IP pública actual",
         "LOCATION: — ubicación aproximada actual (ciudad/país)",
         "WEATHER: — clima actual",
+        "REMEMBER: <hecho> — guardar algo sobre el usuario para recordarlo después",
     ]
     if allow_shell:
         tool_names.append("RUN: <comando> — ejecutar un comando de shell")
@@ -334,6 +368,7 @@ def _run_interactive(
         "cuando corresponda):\n" + "\n".join(f"- {t}" for t in tool_names)
     )
     effective_system += load_tool_prompt("weather")
+    effective_system += load_tool_prompt("memory")
     if allow_shell:
         effective_system += load_tool_prompt("shell")
     if allow_search:
@@ -356,6 +391,10 @@ def _run_interactive(
         if user_input.strip().lower() == "exit":
             typer.echo("--- fin del chat ---")
             return
+
+        recalled = _recall_relevant_memories(user_input, memory_store)
+        if recalled is not None:
+            history.append({"role": "system", "content": recalled})
 
         content = f"{user_input} /no_think" if no_think else user_input
         history.append({"role": "user", "content": content})
@@ -393,6 +432,11 @@ def _run_interactive(
         weather_summary = _handle_weather_query(response_text)
         if weather_summary is not None:
             history.append({"role": "system", "content": weather_summary})
+            used_a_tool = True
+
+        remember_summary = _handle_remember_note(response_text, memory_store)
+        if remember_summary is not None:
+            history.append({"role": "system", "content": remember_summary})
             used_a_tool = True
 
         if used_a_tool:
