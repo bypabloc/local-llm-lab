@@ -36,11 +36,22 @@ load_dotenv(Path.cwd() / ".env")
 
 app = typer.Typer(help="local-llm-lab: router + benchmark de LLMs locales")
 
+
+def _detect_device() -> str:
+    """gpu si llama-cpp-python tiene soporte CUDA/Metal compilado, sino cpu."""
+    from llama_cpp import llama_supports_gpu_offload
+
+    return "gpu" if llama_supports_gpu_offload() else "cpu"
+
+
 DeviceOption = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--device",
-        help="Dónde correr el modelo: 'cpu' o 'gpu' (offload completo a GPU vía CUDA)",
+        help=(
+            "Dónde correr el modelo: 'cpu' o 'gpu'. Sin indicar, se autodetecta "
+            "según si llama-cpp-python tiene soporte CUDA compilado."
+        ),
     ),
 ]
 
@@ -71,13 +82,18 @@ def _apply_persona_to_system(persona: Persona, system: str) -> str:
 _GPU_LAYERS_FULL_OFFLOAD = -1
 
 
-def _build_router(device: str) -> LLMRouter:
+def _resolve_device(device: str | None) -> str:
+    if device is None:
+        return _detect_device()
     if device not in ("cpu", "gpu"):
         typer.echo(
             f"Error: --device debe ser 'cpu' o 'gpu', recibido '{device}'", err=True
         )
         raise typer.Exit(code=1)
+    return device
 
+
+def _build_router(device: str) -> LLMRouter:
     configs = load_model_configs()
     if device == "gpu":
         gpu_layers = _GPU_LAYERS_FULL_OFFLOAD
@@ -89,9 +105,9 @@ def _build_router(device: str) -> LLMRouter:
 
 
 @app.command("list")
-def list_models(device: DeviceOption = "cpu") -> None:
+def list_models(device: DeviceOption = None) -> None:
     """Lista los modelos configurados en config/models.toml."""
-    router = _build_router(device)
+    router = _build_router(_resolve_device(device))
     for name in router.available_models():
         typer.echo(name)
 
@@ -397,41 +413,46 @@ def chat(
             help="Desactiva el modo thinking en modelos que lo soportan (Qwen3)",
         ),
     ] = False,
-    device: DeviceOption = "cpu",
+    device: DeviceOption = None,
     interactive: Annotated[
         bool,
         typer.Option(
-            "--interactive",
+            "--interactive/--no-interactive",
             help="Modo REPL con historial y streaming en vez de un solo turno",
         ),
-    ] = False,
-    allow_shell: Annotated[
+    ] = True,
+    disable_shell: Annotated[
         bool,
         typer.Option(
-            "--allow-shell",
+            "--disable-shell",
             help=(
-                "Permite que el modelo proponga comandos de shell (marcador RUN:) "
-                "en modo --interactive. Requiere confirmación manual por comando "
-                "y pasa por un blocklist — nunca se ejecuta nada sin tu 's'."
+                "Desactiva que el modelo proponga comandos de shell (marcador "
+                "RUN:) en modo --interactive. Activo por defecto; siempre "
+                "requiere confirmación manual por comando y pasa por un "
+                "blocklist — nunca se ejecuta nada sin tu 's'."
             ),
         ),
     ] = False,
-    allow_search: Annotated[
+    disable_search: Annotated[
         bool,
         typer.Option(
-            "--allow-search",
+            "--disable-search",
             help=(
-                "Permite que el modelo busque en internet (marcador SEARCH:) "
-                "en modo --interactive. Es de solo lectura, no requiere "
-                "confirmación manual."
+                "Desactiva que el modelo busque en internet (marcador SEARCH:) "
+                "en modo --interactive. Activo por defecto; es de solo lectura, "
+                "no requiere confirmación manual."
             ),
         ),
     ] = False,
-    agent: AgentOption = None,
+    agent: AgentOption = "jarvis",
 ) -> None:
-    """Envía un mensaje a un modelo (o abre un REPL con --interactive)."""
+    """Envía un mensaje a un modelo (REPL interactivo por defecto)."""
     persona = _load_persona(agent)
-    router = _build_router(device)
+    resolved_device = _resolve_device(device)
+    router = _build_router(resolved_device)
+    device = resolved_device
+    allow_shell = not disable_shell
+    allow_search = not disable_search
     system = system_file.read_text(encoding="utf-8") if system_file else ""
     system = _apply_persona_to_system(persona, system)
     try:
@@ -486,11 +507,12 @@ def bench(
     output: Annotated[
         Path | None, typer.Option(help="Guardar resultados (con texto) en JSON")
     ] = None,
-    device: DeviceOption = "cpu",
+    device: DeviceOption = None,
     agent: AgentOption = None,
 ) -> None:
     """Compara tok/s, tiempo total y respuesta completa entre uno o varios modelos."""
     persona = _load_persona(agent)
+    device = _resolve_device(device)
     router = _build_router(device)
     system = system_file.read_text(encoding="utf-8") if system_file else ""
     system = _apply_persona_to_system(persona, system)
