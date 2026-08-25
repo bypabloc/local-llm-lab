@@ -272,7 +272,7 @@ def _recall_relevant_memories(user_input: str, store: MemoryStore) -> str | None
     if not entries:
         return None
     formatted = "\n".join(f"- {entry.content}" for entry in entries)
-    return f"[recordás esto sobre el usuario:\n{formatted}]"
+    return f"[you already know this about the user:\n{formatted}]"
 
 
 def _ensure_searxng_running() -> None:
@@ -354,18 +354,18 @@ def _run_interactive(
         typer.echo(">>> búsqueda web desactivada (--disable-search)")
     effective_system = system
     tool_names = [
-        "IP: — IP pública actual",
-        "LOCATION: — ubicación aproximada actual (ciudad/país)",
-        "WEATHER: — clima actual",
-        "REMEMBER: <hecho> — guardar algo sobre el usuario para recordarlo después",
+        "IP: — current public IP",
+        "LOCATION: — approximate current location (city/country)",
+        "WEATHER: — current weather",
+        "REMEMBER: <fact> — save something about the user to recall it later",
     ]
     if allow_shell:
-        tool_names.append("RUN: <comando> — ejecutar un comando de shell")
+        tool_names.append("RUN: <command> — run a shell command")
     if allow_search:
-        tool_names.append("SEARCH: <consulta> — buscar en internet")
+        tool_names.append("SEARCH: <query> — search the internet")
     effective_system += (
-        "\n\nHerramientas disponibles (usalas escribiendo la línea exacta "
-        "cuando corresponda):\n" + "\n".join(f"- {t}" for t in tool_names)
+        "\n\nAvailable tools (use the exact line format when it applies):\n"
+        + "\n".join(f"- {t}" for t in tool_names)
     )
     effective_system += load_tool_prompt("weather")
     effective_system += load_tool_prompt("memory")

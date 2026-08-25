@@ -54,6 +54,48 @@ complejidad y una dependencia nueva para un problema que la
 deduplicación exacta ya resuelve en la práctica, dado que el modelo
 tiende a repetir la misma frase casi literal, no a parafrasear.
 
+## Decisión de diseño: instrucciones de tools en inglés
+
+Los 4 archivos de `config/tools/*.md` (memory, search, shell, weather)
+están en inglés, no español. Investigación previa (arXiv, comparativas de
+prompt language) muestra un gap de 2-10% en instruction-following cuando
+el prompt del sistema está en un idioma no-inglés, y que la mayoría de los
+modelos open-source (Gemma, Qwen) se entrenan con más datos de instrucción
+en inglés que en cualquier otro idioma — el propio texto del usuario
+(lo que se guarda como hecho, y las respuestas de jarvis) se queda en
+español, el cambio es solo en el instructivo del sistema. Se aplicó
+también a la lista de tool names inline en `cli/main.py`
+(`_run_interactive`) y al mensaje de recall (`_recall_relevant_memories`),
+ya que ambos son parte del mismo contrato de instrucción que `memory.md`
+referencia explícitamente ("you already know this about the user").
+
+Estructura del prompt (misma en los 4 archivos, patrón de Mem0/Qwen/Gemma
+cookbook): ROLE + GOAL + reglas explícitas de cuándo SÍ y cuándo NO usar la
+tool (NOOP explícito, no solo el caso positivo) + formato exacto + ejemplos
+few-shot. La categoría NOOP explícita (inspirada en el router de
+ADD/UPDATE/DELETE/NOOP de Mem0) fue el cambio más impactante en la
+práctica: antes, preguntas como "¿cuál es mi IP?" a veces disparaban un
+`REMEMBER:` espurio porque el prompt solo describía el caso positivo.
+
+## Decisión de diseño: hechos autocontenidos, no fragmentados
+
+Bug observado: el modelo guardaba "Pablo prefiere respuestas concisas" (sin
+la palabra "llama"/"nombre") cuando el usuario decía "soy Pablo, me gusta
+que me escribas conciso" — dos datos en un mensaje, guardados de forma
+fragmentada o incompleta. Buscar después "¿cómo me llamo?" no encontraba
+nada porque ninguna palabra de la query aparecía en el hecho guardado.
+
+Se resolvió agregando una instrucción explícita en `memory.md`: cada hecho
+debe incluir el detalle específico (nombre, preferencia) y "contener las
+palabras reales que alguien buscaría después" — sin tocar el código de
+`_recall_relevant_memories` ni el matching de `store.py`. Verificado
+end-to-end (3 corridas con `--no-think`, determinístico): el modelo pasó a
+guardar "El usuario se llama Pablo y prefiere respuestas concisas" como un
+único hecho autocontenido, y el recall de "¿cómo me llamo?" empezó a
+funcionar sin más cambios. La lección: cuando el recall falla, revisar
+primero si el problema es lo que se guardó (prompt) antes de asumir que
+hace falta más lógica de búsqueda (código).
+
 ## Flujo completo
 
 1. En modo `--interactive` (siempre activo, no hay flag para desactivarlo —
