@@ -15,6 +15,10 @@ def test_load_tool_prompt_weather_menciona_weather() -> None:
     assert "WEATHER:" in load_tool_prompt("weather")
 
 
+def test_load_tool_prompt_memory_menciona_remember() -> None:
+    assert "REMEMBER:" in load_tool_prompt("memory")
+
+
 def test_load_tool_prompt_desconocido_lanza_error() -> None:
     with pytest.raises(FileNotFoundError):
         load_tool_prompt("no-existe")
