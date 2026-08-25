@@ -13,3 +13,12 @@ htmlcov/
 .env*
 .vscode/
 data/*.db
+node_modules/
+ui/dist/
+src-tauri/target/
+src-tauri/binaries/
+server/build/
+server/dist/
+*.spec.lock
+ui/test-results/
+ui/playwright-report/

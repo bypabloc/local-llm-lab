@@ -1,0 +1,11 @@
+{
+  "name": "local-llm-lab-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter ui dev",
+    "build": "pnpm --filter ui build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

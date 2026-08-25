@@ -27,6 +27,9 @@ dev = [
     "mypy>=1.13.0",
 ]
 
+[tool.uv.workspace]
+members = ["server"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"  # ponytail: ruff/mypy aun no exponen py314 como target estable; subir cuando lo soporten
@@ -38,7 +41,13 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.13"  # ponytail: mismo motivo que ruff target-version arriba
 strict = true
 warn_unused_ignores = true
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "server.settings"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
+testpaths = ["tests", "server"]
+pythonpath = [".", "src", "server"]
+DJANGO_SETTINGS_MODULE = "server.settings"
+asyncio_mode = "auto"
