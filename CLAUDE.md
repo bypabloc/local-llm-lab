@@ -30,6 +30,8 @@ Ver en detalle: `.claude/rules/`
 - `testing.md` — TDD, qué se mockea y qué no, estructura de tests
 - `research-context.md` — resumen de la investigación de modelos/hardware que da contexto a las decisiones del proyecto
 - `use-cases-research.md` — investigación de comunidad sobre para qué se usan realmente los LLMs locales, y qué features priorizar en este proyecto en base a eso
+- `shell-execution.md` — diseño y capas de seguridad de la ejecución de comandos vía `--allow-shell`
+- `memory.md` — diseño de la memoria persistente del chat (`REMEMBER:`), por qué SQLite+FTS5 y no un grafo
 
 ## Principios no negociables
 
