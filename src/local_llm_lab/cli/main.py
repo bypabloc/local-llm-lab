@@ -241,25 +241,34 @@ def _handle_weather_query(response_text: str) -> str | None:
     )
 
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _ensure_searxng_running() -> None:
     """Si SEARXNG_URL apunta a una instancia local, la levanta con Docker si hace falta.
 
     Import perezoso: `devtools/` es tooling de desarrollo fuera de src/, no una
     dependencia del paquete instalable — su ausencia no debe romper el chat.
+    El entry point instalado (.venv/bin/llm-lab) no agrega la raíz del repo a
+    sys.path (solo src/, vía el editable install) — se agrega acá a mano para
+    poder importar devtools/ sin depender del cwd desde el que se invoque.
     """
     import os
+    import sys
 
     url = os.environ.get("SEARXNG_URL")
     if not url:
         return
+
+    if str(_REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(_REPO_ROOT))
 
     try:
         from devtools.searxng.main import SearxngUnavailableError, ensure_running
     except ImportError:
         typer.echo(
             ">>> aviso: no se pudo importar devtools/searxng "
-            "(¿corriste el comando fuera de la raíz del repo?), "
-            "sigo sin auto-levantar SearXNG"
+            f"(no encontrado en {_REPO_ROOT}), sigo sin auto-levantar SearXNG"
         )
         return
 
