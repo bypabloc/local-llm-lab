@@ -68,3 +68,8 @@ export interface BenchResult {
   no_think: boolean
   text: string
 }
+
+export interface AppSettings {
+  memory_db_path: string
+  models_dir: string | null
+}

@@ -7,11 +7,12 @@ interface Props {
   settings: ChatSettings
   onChange: (settings: ChatSettings) => void
   onOpenBench: () => void
+  onOpenSettings: () => void
 }
 
 const AGENTS: Agent[] = ["jarvis", "tars", "gemma"]
 
-export function Sidebar({ models, settings, onChange, onOpenBench }: Props) {
+export function Sidebar({ models, settings, onChange, onOpenBench, onOpenSettings }: Props) {
   function patch(partial: Partial<ChatSettings>) {
     onChange({ ...settings, ...partial })
   }
@@ -125,13 +126,22 @@ export function Sidebar({ models, settings, onChange, onOpenBench }: Props) {
         />
       </label>
 
-      <button
-        type="button"
-        className="mt-auto rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
-        onClick={onOpenBench}
-      >
-        Bench
-      </button>
+      <div className="mt-auto flex gap-2">
+        <button
+          type="button"
+          className="flex-1 rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+          onClick={onOpenBench}
+        >
+          Bench
+        </button>
+        <button
+          type="button"
+          className="flex-1 rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+          onClick={onOpenSettings}
+        >
+          Settings
+        </button>
+      </div>
     </aside>
   )
 }

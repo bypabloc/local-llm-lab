@@ -1,5 +1,5 @@
-from core.config.tools import load_tool_prompt
-from core.personalities import Persona
+from llm.config.tools import load_tool_prompt
+from llm.personalities import Persona
 
 _TOOLS_HEADER = "\n\nAvailable tools (use the exact line format when it applies):\n"
 

@@ -1,4 +1,6 @@
+import { isTauri } from "../lib/tauri"
 import type {
+  AppSettings,
   BenchRequest,
   BenchResult,
   ChatEvent,
@@ -11,8 +13,7 @@ import type {
 // standalone); dentro de Tauri, el sidecar bindea a un puerto efímero
 // elegido por Rust y este invoke lo descubre en runtime.
 async function resolveBaseUrl(): Promise<string> {
-  const w = window as unknown as { __TAURI_INTERNALS__?: unknown }
-  if (w.__TAURI_INTERNALS__ === undefined) {
+  if (!isTauri()) {
     return "http://127.0.0.1:8000/api"
   }
   const { invoke } = await import("@tauri-apps/api/core")
@@ -61,6 +62,28 @@ export async function runBench(request: BenchRequest): Promise<BenchResult[]> {
   }
   const body = (await response.json()) as { results: BenchResult[] }
   return body.results
+}
+
+export async function fetchSettings(): Promise<AppSettings> {
+  const base = await getBaseUrl()
+  const response = await fetch(`${base}/settings`)
+  if (!response.ok) {
+    throw new Error(`GET /settings falló: ${response.status}`)
+  }
+  return (await response.json()) as AppSettings
+}
+
+export async function saveSettings(settings: AppSettings): Promise<AppSettings> {
+  const base = await getBaseUrl()
+  const response = await fetch(`${base}/settings/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  })
+  if (!response.ok) {
+    throw new Error(`POST /settings/update falló: ${response.status}`)
+  }
+  return (await response.json()) as AppSettings
 }
 
 export async function* streamChat(

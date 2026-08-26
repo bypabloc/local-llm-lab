@@ -4,14 +4,14 @@
 from PyInstaller.utils.hooks import collect_all, collect_data_files
 
 llama_datas, llama_binaries, llama_hiddenimports = collect_all("llama_cpp")
-core_datas = collect_data_files("core")
+llm_datas = collect_data_files("llm")
 django_datas, django_binaries, django_hiddenimports = collect_all("django")
 
 a = Analysis(
     ["run_sidecar.py"],
-    pathex=["../src", "."],
+    pathex=["."],
     binaries=llama_binaries + django_binaries,
-    datas=llama_datas + core_datas + django_datas,
+    datas=llama_datas + llm_datas + django_datas,
     hiddenimports=llama_hiddenimports
     + django_hiddenimports
     + ["daphne", "corsheaders", "llm", "llm.services", "server.settings"],

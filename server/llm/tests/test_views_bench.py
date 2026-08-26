@@ -1,10 +1,11 @@
 import json
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from django.test import Client
 
-from core.router.llm_router import LLMRouter
+from llm.router.llm_router import LLMRouter
 from llm.services import device as device_service
 from llm.services import router_singleton
 from llm.tests.fakes import FakeBackend
@@ -14,8 +15,8 @@ from llm.tests.fakes import FakeBackend
 def _fake_router(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     router_singleton.reset()
 
-    def fake_build_router(device: str) -> LLMRouter:
-        configs = device_service.resolve_model_configs(device)
+    def fake_build_router(device: str, models_dir: Path | None = None) -> LLMRouter:
+        configs = device_service.resolve_model_configs(device, models_dir)
         return LLMRouter(
             configs,
             backend_factory=lambda config: FakeBackend(config, reply="respuesta fake"),

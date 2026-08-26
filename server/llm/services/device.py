@@ -2,9 +2,9 @@ import dataclasses
 import os
 from pathlib import Path
 
-from core.backends.llama_cpp_backend import LlamaCppBackend
-from core.config.models import ModelConfig, load_model_configs
-from core.router.llm_router import LLMRouter
+from llm.backends.llama_cpp_backend import LlamaCppBackend
+from llm.config.models import ModelConfig, load_model_configs
+from llm.router.llm_router import LLMRouter
 
 # ponytail: -1 = todas las capas a GPU (offload completo), igual que cli/main.py.
 _GPU_LAYERS_FULL_OFFLOAD = -1
@@ -37,8 +37,12 @@ def resolve_project_root() -> Path | None:
     return Path(value) if value else None
 
 
-def resolve_model_configs(device: str) -> dict[str, ModelConfig]:
-    configs = load_model_configs(project_root=resolve_project_root())
+def resolve_model_configs(
+    device: str, models_dir: Path | None = None
+) -> dict[str, ModelConfig]:
+    configs = load_model_configs(
+        project_root=resolve_project_root(), models_dir=models_dir
+    )
     if device == "gpu":
         configs = {
             name: dataclasses.replace(config, n_gpu_layers=_GPU_LAYERS_FULL_OFFLOAD)
@@ -47,5 +51,7 @@ def resolve_model_configs(device: str) -> dict[str, ModelConfig]:
     return configs
 
 
-def build_router(device: str) -> LLMRouter:
-    return LLMRouter(resolve_model_configs(device), backend_factory=LlamaCppBackend)
+def build_router(device: str, models_dir: Path | None = None) -> LLMRouter:
+    return LLMRouter(
+        resolve_model_configs(device, models_dir), backend_factory=LlamaCppBackend
+    )
