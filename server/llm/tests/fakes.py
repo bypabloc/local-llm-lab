@@ -3,13 +3,13 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.backends.protocol import ChatMessage, GenerationResult
-from core.config.models import ModelConfig
+from llm.backends.protocol import ChatMessage, GenerationResult
+from llm.config.models import ModelConfig
 
 
 @dataclass
 class FakeBackend:
-    """Copia adaptada de tests/unit/fakes.py, sin acoplar server/ a tests/ de core."""
+    """Backend en memoria para tests, sin depender de llama-cpp-python."""
 
     config: ModelConfig
     reply: str = "ok"

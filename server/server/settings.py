@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from core.config.dotenv import load_dotenv
+from llm.config.dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = BASE_DIR.parent
@@ -40,7 +40,7 @@ CORS_ALLOW_METHODS = ["GET", "POST", "OPTIONS"]
 USE_TZ = True
 
 # ponytail: sin modelos Django reales (el estado vive en data/memory.db via
-# core.memory), sqlite en memoria solo para que el framework arranque.
+# llm.memory), sqlite en memoria solo para que el framework arranque.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

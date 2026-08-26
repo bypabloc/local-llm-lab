@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from core.memory.store import MemoryStore
+from llm.memory.store import MemoryStore
 from llm.services.chat_turn import ChatEvent, run_chat_turn
 from llm.tests.fakes import FakeBackend, make_model_config
 
@@ -107,7 +107,7 @@ def test_run_sin_allow_shell_no_se_detecta(memory_store: MemoryStore) -> None:
 def test_search_detectado_dispara_ronda_de_seguimiento_unica(
     monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
 ) -> None:
-    from core.shell.web_search import SearchOutcome, SearchResult
+    from llm.shell.web_search import SearchOutcome, SearchResult
 
     def fake_search_web(query: str, **kwargs: object) -> SearchOutcome:
         return SearchOutcome(
@@ -143,7 +143,7 @@ def test_remember_detectado_guarda_en_memoria_y_hace_seguimiento(
 def test_ip_detectado_dispara_ronda_de_seguimiento(
     monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
 ) -> None:
-    from core.shell.location import IpOutcome
+    from llm.shell.location import IpOutcome
 
     monkeypatch.setattr(
         "llm.services.chat_turn.get_public_ip",
@@ -164,7 +164,7 @@ def test_ip_detectado_dispara_ronda_de_seguimiento(
 def test_location_detectado_dispara_ronda_de_seguimiento(
     monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
 ) -> None:
-    from core.shell.location import LocationOutcome
+    from llm.shell.location import LocationOutcome
 
     monkeypatch.setattr(
         "llm.services.chat_turn.get_location",
@@ -186,7 +186,7 @@ def test_location_detectado_dispara_ronda_de_seguimiento(
 def test_weather_detectado_dispara_ronda_de_seguimiento(
     monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
 ) -> None:
-    from core.shell.location import WeatherForLocationOutcome
+    from llm.shell.location import WeatherForLocationOutcome
 
     monkeypatch.setattr(
         "llm.services.chat_turn.get_weather_for_current_location",
@@ -208,7 +208,7 @@ def test_weather_detectado_dispara_ronda_de_seguimiento(
 def test_orden_de_deteccion_ip_antes_que_location_antes_que_weather(
     monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
 ) -> None:
-    from core.shell.location import IpOutcome
+    from llm.shell.location import IpOutcome
 
     monkeypatch.setattr(
         "llm.services.chat_turn.get_public_ip", lambda: IpOutcome(ip="9.9.9.9")

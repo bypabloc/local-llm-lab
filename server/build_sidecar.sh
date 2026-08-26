@@ -9,7 +9,7 @@ if [ -z "$TARGET_TRIPLE" ]; then
   exit 1
 fi
 
-PYTHONPATH="../src:." uv run --project .. pyinstaller server.spec --noconfirm
+PYTHONPATH="." uv run --project .. pyinstaller server.spec --noconfirm
 
 DEST="../src-tauri/binaries/llm-lab-server-${TARGET_TRIPLE}"
 mkdir -p ../src-tauri/binaries

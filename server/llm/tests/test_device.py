@@ -51,7 +51,7 @@ def test_build_router_gpu_fuerza_n_gpu_layers_full_offload() -> None:
 
 
 def test_build_router_cpu_respeta_n_gpu_layers_del_toml() -> None:
-    from core.config.models import load_model_configs
+    from llm.config.models import load_model_configs
     from llm.services.device import resolve_model_configs
 
     configs = resolve_model_configs("cpu")

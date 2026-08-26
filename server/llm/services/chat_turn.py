@@ -2,9 +2,9 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from core.backends.protocol import ChatMessage, LLMBackend
-from core.memory import MemoryStore, extract_remember_note
-from core.shell.location import (
+from llm.backends.protocol import ChatMessage, LLMBackend
+from llm.memory import MemoryStore, extract_remember_note
+from llm.shell.location import (
     extract_ip_query,
     extract_location_query,
     extract_weather_query,
@@ -12,8 +12,8 @@ from core.shell.location import (
     get_public_ip,
     get_weather_for_current_location,
 )
-from core.shell.runner import extract_run_command
-from core.shell.web_search import extract_search_query, search_web
+from llm.shell.runner import extract_run_command
+from llm.shell.web_search import extract_search_query, search_web
 
 ChatEventKind = Literal["token", "run_proposed", "tool_result", "assistant_done"]
 

@@ -85,6 +85,11 @@ pub fn run() {
                 .parent()
                 .expect("src-tauri debería tener un padre")
                 .to_path_buf();
+            let data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("no se pudo resolver app_data_dir");
+            std::fs::create_dir_all(&data_dir).expect("no se pudo crear el data dir");
             let (_rx, child) = app
                 .shell()
                 .sidecar("llm-lab-server")
@@ -94,6 +99,7 @@ pub fn run() {
                     "LLM_LAB_PROJECT_ROOT",
                     project_root.to_string_lossy().to_string(),
                 )
+                .env("LLM_LAB_DATA_DIR", data_dir.to_string_lossy().to_string())
                 .spawn()
                 .expect("no se pudo lanzar el sidecar llm-lab-server");
 

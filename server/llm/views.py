@@ -9,29 +9,60 @@ from django.http import HttpRequest, JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from core.backends.protocol import ChatMessage
-from core.benchmark.runner import run_benchmark
-from core.config.models import load_model_configs
-from core.memory import MemoryStore
-from core.personalities import get_persona, resolve_agent_name
+from llm.backends.protocol import ChatMessage
+from llm.benchmark.runner import run_benchmark
+from llm.config.models import load_model_configs
+from llm.memory import MemoryStore
+from llm.personalities import get_persona, resolve_agent_name
+from llm.services.app_settings import (
+    AppSettings,
+    load_settings,
+    resolve_data_dir,
+    save_settings,
+)
 from llm.services.chat_turn import run_chat_turn
-from llm.services.device import resolve_device
+from llm.services.device import resolve_device, resolve_project_root
 from llm.services.router_singleton import get_router
 from llm.services.shell_confirm import confirm_and_run
 from llm.services.system_prompt import build_system_prompt
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_MEMORY_DB_PATH = _REPO_ROOT / "data" / "memory.db"
+
+
+def _resolve_data_dir() -> Path:
+    return resolve_data_dir() or (resolve_project_root() or _REPO_ROOT) / "data"
+
+
+def _current_settings() -> AppSettings:
+    return load_settings(_resolve_data_dir())
 
 
 @require_GET
 def list_models(request: HttpRequest) -> JsonResponse:
-    configs = load_model_configs()
+    settings = _current_settings()
+    models_dir = Path(settings.models_dir) if settings.models_dir else None
+    configs = load_model_configs(models_dir=models_dir)
     models = [
         {"name": name, "n_ctx": config.n_ctx, "license": config.license}
         for name, config in sorted(configs.items())
     ]
     return JsonResponse({"models": models})
+
+
+@require_GET
+def list_settings(request: HttpRequest) -> JsonResponse:
+    return JsonResponse(asdict(_current_settings()))
+
+
+@csrf_exempt
+@require_POST
+def update_settings(request: HttpRequest) -> JsonResponse:
+    body = json.loads(request.body)
+    settings = AppSettings(
+        memory_db_path=body["memory_db_path"], models_dir=body.get("models_dir")
+    )
+    save_settings(_resolve_data_dir(), settings)
+    return JsonResponse(asdict(settings))
 
 
 @csrf_exempt
@@ -57,7 +88,9 @@ def shell_confirm(request: HttpRequest) -> JsonResponse:
 def bench(request: HttpRequest) -> JsonResponse:
     body = json.loads(request.body)
     device = resolve_device(body.get("device"))
-    router = get_router(device)
+    settings = _current_settings()
+    models_dir = Path(settings.models_dir) if settings.models_dir else None
+    router = get_router(device, models_dir)
 
     results = []
     for model_name in body["models"]:
@@ -131,7 +164,9 @@ async def _chat_event_stream(
 async def chat(request: HttpRequest) -> StreamingHttpResponse:
     body = json.loads(request.body)
     device = resolve_device(body.get("device"))
-    router = get_router(device)
+    settings = _current_settings()
+    models_dir = Path(settings.models_dir) if settings.models_dir else None
+    router = get_router(device, models_dir)
     backend = router.get(body["model"])
 
     persona = get_persona(resolve_agent_name(body.get("agent")))
@@ -151,7 +186,7 @@ async def chat(request: HttpRequest) -> StreamingHttpResponse:
         _chat_event_stream(
             backend,
             history,
-            _MEMORY_DB_PATH,
+            Path(settings.memory_db_path),
             body.get("max_tokens", 1024),
             body.get("no_think", False),
             allow_shell,

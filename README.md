@@ -1,69 +1,72 @@
 # local-llm-lab
 
-Laboratorio para correr LLMs open source livianos en local (CPU/RAM, sin GPU
-dedicada) desde Python, con un router extensible por modelo y un CLI de
-benchmark para comparar tokens/segundo, tiempo de prefill y calidad básica
-de respuesta entre modelos.
+App de escritorio (Tauri v2 + React 19 + Django) para correr LLMs open
+source livianos en local (CPU/GPU) desde una UI de chat, con benchmark
+integrado de tokens/segundo, tiempo de prefill y calidad básica de
+respuesta entre modelos.
 
 ## Por qué existe
 
 Investigación previa (ver `.claude/rules/research-context.md`) concluyó que
-para tareas sencillas de chat/asistente, en una laptop sin GPU dedicada con
-32GB+ RAM, los mejores candidatos son modelos 3B-8B cuantizados en GGUF
-(Qwen3-4B, Qwen3-8B, Phi-4-mini, Gemma). Este proyecto es el lugar para
-probarlos en la práctica y medir cuál rinde mejor en el hardware real del
-usuario, en lugar de confiar solo en benchmarks de terceros.
+para tareas sencillas de chat/asistente, modelos 3B-8B cuantizados en GGUF
+(Qwen3-4B, Qwen3-8B, Phi-4-mini, Gemma) son el mejor punto de partida. Este
+proyecto es el lugar para probarlos en la práctica y medir cuál rinde mejor
+en el hardware real del usuario, en lugar de confiar solo en benchmarks de
+terceros. Arquitectura completa del stack de UI: `.claude/rules/ui-stack-architecture.md`.
 
 ## Requisitos
 
-- Python 3.14
-- [uv](https://docs.astral.sh/uv/) como gestor de entorno/dependencias
+- Python 3.14 + [uv](https://docs.astral.sh/uv/)
+- Node.js + [pnpm](https://pnpm.io/)
+- Rust (vía `rustup`) + dependencias nativas de Tauri v2
 - Modelos GGUF descargados manualmente en `models/` (no se versionan en git)
 
 ## Setup
 
 ```bash
 uv sync
+pnpm install
 ```
 
 ## Uso
 
 ```bash
-# listar modelos configurados
-uv run llm-lab list
+# App Tauri completa (lanza Vite + servidor Django automáticamente)
+pnpm tauri dev
 
-# chat con un modelo puntual (usa el router, default: gemma4-e2b)
-uv run llm-lab chat --model qwen3-4b --system-file AGENTS.md
+# Servidor Django solo (dev, sin autoreload)
+PYTHONPATH="server" uv run daphne -b 127.0.0.1 -p 8000 server.asgi:application
 
-# benchmark de uno o varios modelos
-uv run llm-lab bench --model qwen3-4b --model qwen3-8b --prompt-file tmp/prompt.txt
-
-# chat interactivo en GPU con shell habilitado y personalidad Jarvis (sugerido)
-uv run llm-lab chat --model gemma4-e2b --device gpu --interactive --allow-shell --agent jarvis
+# Frontend solo
+pnpm --filter ui dev
 ```
 
-### Personalidades (`--agent`)
+### Personalidades (`agent`)
 
-El tono de respuesta se controla con `--agent` (o la variable de entorno
-`LLM_LAB_AGENT`): `jarvis`, `tars` o `gemma` (default, neutral). Ver
-`src/core/personas/`.
+El tono de respuesta se controla eligiendo `agent` en la request de chat:
+`jarvis`, `tars` o `gemma` (default, neutral). Ver `server/llm/personalities/`.
 
 ## Estructura
 
 ```
-src/core/
-  router/       # LLMRouter: selecciona backend+modelo por nombre lógico
-  backends/     # Adaptadores por runtime (llama_cpp hoy; extensible a otros)
-  benchmark/    # Medición de tok/s, prefill, uso de memoria
-  cli/          # Entry points de Typer/argparse
-  config/       # Definición de modelos disponibles (YAML/TOML)
-tests/
-  unit/         # Tests aislados (mocks de backend)
-  integration/  # Tests contra modelos reales (requieren GGUF descargado, skip si falta)
+server/
+  llm/
+    router/       # LLMRouter: selecciona backend+modelo por nombre lógico
+    backends/     # Adaptadores por runtime (llama_cpp hoy; extensible a otros)
+    benchmark/    # Medición de tok/s, prefill, uso de memoria
+    memory/       # Memoria persistente del chat (SQLite+FTS5)
+    shell/        # Ejecución de comandos vía RUN:, tools de IP/clima/búsqueda
+    config/       # models.toml, .env, prompts de tools
+    personalities/ # Personas del chat (jarvis, tars, gemma)
+    services/     # Orquestación HTTP: chat_turn, device, router_singleton, etc.
+    views.py      # Endpoints Django (delgados, delegan a services/)
+    tests/        # Tests del stack completo (unit + integración de servicios)
+  server/         # settings.py, urls.py, asgi.py
+ui/               # React 19 + Vite + TypeScript
+src-tauri/        # Shell nativo Tauri v2
 .claude/
-  rules/        # KISS, SOLID, estilo Python, contexto de investigación
-  skills/       # Skills invocables para tareas repetibles del proyecto
-  agents/       # Definiciones de subagentes específicos del proyecto
+  rules/          # KISS, SOLID, estilo Python/TS, arquitectura, contexto de investigación
+  skills/         # Skills invocables para tareas repetibles del proyecto
 ```
 
 Ver `CLAUDE.md` para las reglas de desarrollo obligatorias del proyecto.

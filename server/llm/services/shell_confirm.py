@@ -1,4 +1,4 @@
-from core.shell.runner import CommandOutcome, run_with_confirmation
+from llm.shell.runner import CommandOutcome, run_with_confirmation
 
 
 def confirm_and_run(command: str) -> CommandOutcome:
