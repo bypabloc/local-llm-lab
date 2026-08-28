@@ -12,6 +12,8 @@ export interface ModelInfo {
   name: string
   n_ctx: number
   license: string
+  is_downloaded: boolean
+  downloadable: boolean
 }
 
 export interface ChatRequest {
@@ -72,4 +74,16 @@ export interface BenchResult {
 export interface AppSettings {
   memory_db_path: string
   models_dir: string | null
+}
+
+export type DownloadEventKind = "progress" | "done" | "error"
+
+export interface DownloadEvent {
+  kind: DownloadEventKind
+  payload: {
+    model: string
+    downloaded?: number
+    total?: number
+    text?: string
+  }
 }

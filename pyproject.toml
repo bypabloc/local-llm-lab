@@ -9,6 +9,7 @@ dependencies = [
     "django>=5.1",
     "django-cors-headers>=4.4",
     "daphne>=4.1",
+    "huggingface-hub>=1.28.0",
 ]
 
 [dependency-groups]

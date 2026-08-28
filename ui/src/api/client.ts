@@ -6,6 +6,7 @@ import type {
   ChatEvent,
   ChatRequest,
   CommandOutcome,
+  DownloadEvent,
   ModelInfo,
 } from "./types"
 
@@ -25,6 +26,30 @@ let cachedBaseUrl: Promise<string> | null = null
 function getBaseUrl(): Promise<string> {
   cachedBaseUrl ??= resolveBaseUrl()
   return cachedBaseUrl
+}
+
+async function* readSseEvents<T>(response: Response): AsyncGenerator<T> {
+  if (!response.ok || response.body === null) {
+    throw new Error(`stream falló: ${response.status}`)
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ""
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+
+    let separatorIndex: number
+    while ((separatorIndex = buffer.indexOf("\n\n")) !== -1) {
+      const chunk = buffer.slice(0, separatorIndex).trim()
+      buffer = buffer.slice(separatorIndex + 2)
+      if (!chunk.startsWith("data: ")) continue
+      yield JSON.parse(chunk.slice("data: ".length)) as T
+    }
+  }
 }
 
 export async function fetchModels(): Promise<ModelInfo[]> {
@@ -97,25 +122,19 @@ export async function* streamChat(
     body: JSON.stringify(request),
     signal,
   })
-  if (!response.ok || response.body === null) {
-    throw new Error(`POST /chat falló: ${response.status}`)
-  }
+  yield* readSseEvents<ChatEvent>(response)
+}
 
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ""
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-
-    let separatorIndex: number
-    while ((separatorIndex = buffer.indexOf("\n\n")) !== -1) {
-      const chunk = buffer.slice(0, separatorIndex).trim()
-      buffer = buffer.slice(separatorIndex + 2)
-      if (!chunk.startsWith("data: ")) continue
-      yield JSON.parse(chunk.slice("data: ".length)) as ChatEvent
-    }
-  }
+export async function* downloadModel(
+  model: string,
+  signal?: AbortSignal,
+): AsyncGenerator<DownloadEvent> {
+  const base = await getBaseUrl()
+  const response = await fetch(`${base}/models/download`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model }),
+    signal,
+  })
+  yield* readSseEvents<DownloadEvent>(response)
 }

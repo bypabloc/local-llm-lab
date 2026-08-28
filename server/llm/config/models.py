@@ -13,6 +13,8 @@ class ModelConfig:
     n_threads: int
     n_gpu_layers: int
     license: str
+    hf_repo: str | None = None
+    hf_file: str | None = None
 
 
 def load_model_configs(
@@ -35,5 +37,7 @@ def load_model_configs(
             n_threads=entry.get("n_threads", 8),
             n_gpu_layers=entry.get("n_gpu_layers", 0),
             license=entry.get("license", "unknown"),
+            hf_repo=entry.get("hf_repo"),
+            hf_file=entry.get("hf_file"),
         )
     return configs

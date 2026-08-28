@@ -47,3 +47,45 @@ def test_search_respeta_limit(tmp_path: Path) -> None:
     results = store.search("gatos", limit=2)
 
     assert len(results) == 2
+
+
+def _fake_embed_fn(text: str) -> list[float]:
+    """Embedding de juguete: vectores casi iguales para textos sobre
+    'nombre' y vectores distintos para textos no relacionados, sin cargar
+    un modelo real — simula lo que un embedding semántico real debería
+    lograr para el caso reportado en producción (nombre vs llama)."""
+    if "llama" in text.lower() or "nombre" in text.lower():
+        return [1.0, 0.0, 0.0]
+    return [0.0, 1.0, 0.0]
+
+
+def test_search_con_embed_fn_encuentra_sinonimo_que_lexico_no_encuentra(
+    tmp_path: Path,
+) -> None:
+    store = MemoryStore(tmp_path / "memory.db", embed_fn=_fake_embed_fn)
+    store.save("El usuario se llama Pablo")
+
+    results = store.search("¿Sabes mi nombre?")
+
+    assert len(results) == 1
+    assert "Pablo" in results[0].content
+
+
+def test_search_sin_embed_fn_no_encuentra_sinonimo_sin_palabras_comunes(
+    tmp_path: Path,
+) -> None:
+    store = MemoryStore(tmp_path / "memory.db")
+    store.save("El usuario se llama Pablo")
+
+    results = store.search("¿Sabes mi nombre?")
+
+    assert results == []
+
+
+def test_search_no_duplica_resultado_ya_encontrado_por_lexico(tmp_path: Path) -> None:
+    store = MemoryStore(tmp_path / "memory.db", embed_fn=_fake_embed_fn)
+    store.save("El usuario se llama Pablo")
+
+    results = store.search("¿cómo me llamo?")
+
+    assert len(results) == 1

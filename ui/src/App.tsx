@@ -18,12 +18,19 @@ const DEFAULT_SETTINGS: ChatSettings = {
   systemFileContent: "",
 }
 
+type SettingsTab = "general" | "models"
+
 export default function App() {
-  const { models, error } = useModels()
+  const { models, error, refresh } = useModels()
   const [settings, setSettings] = useState<ChatSettings>(DEFAULT_SETTINGS)
   const [showBench, setShowBench] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null)
   const chat = useChatStream(settings)
+
+  function closeSettings() {
+    setSettingsTab(null)
+    refresh()
+  }
 
   return (
     <div className="flex h-screen flex-col bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
@@ -34,7 +41,8 @@ export default function App() {
           settings={settings}
           onChange={setSettings}
           onOpenBench={() => setShowBench(true)}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={() => setSettingsTab("general")}
+          onOpenModelDownloads={() => setSettingsTab("models")}
         />
         {error && (
           <div className="absolute inset-x-0 top-0 z-10 bg-red-600 px-3 py-2 text-sm text-white">
@@ -43,8 +51,8 @@ export default function App() {
         )}
         {showBench ? (
           <BenchView models={models} onClose={() => setShowBench(false)} />
-        ) : showSettings ? (
-          <SettingsView onClose={() => setShowSettings(false)} />
+        ) : settingsTab ? (
+          <SettingsView onClose={closeSettings} initialTab={settingsTab} />
         ) : (
           <ChatPanel chat={chat} />
         )}
