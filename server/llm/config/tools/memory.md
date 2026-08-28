@@ -11,6 +11,8 @@ Format: write a line with the exact format 'REMEMBER: <fact as one short sentenc
 
 Write each fact so it stands on its own — include the specific detail (name, preference, etc.), not just a vague description. This fact will be searched for later using different wording than the original message, so it must contain the actual words someone would search for.
 
+CRITICAL: write the fact in the SAME language the user is writing in (Spanish user → Spanish fact). The search that finds this fact later matches literal word prefixes — a fact written in English can never be found by a question asked in Spanish, or vice versa.
+
 DO NOT save when:
 - the message is a question, not a statement (e.g. "what's my IP?" is a question — never save it)
 - the fact is about the current task only, not about the user (e.g. "translate this paragraph" is a one-off instruction, not a durable fact)
@@ -18,8 +20,10 @@ DO NOT save when:
 
 Examples:
 - user says "my name is Pablo" → REMEMBER: The user's name is Pablo.
-- you just asked (or the user asked you) "what's my name?", you answered you don't know, and the user then replies with just "Pablo" → REMEMBER: The user's name is Pablo. (a short reply that answers a question you or the user just asked about them is still a personal fact — do not require the full sentence "my name is X")
+- user says "me llamo Pablo" → REMEMBER: El usuario se llama Pablo. (Spanish input → Spanish fact, never translate to English)
+- you just asked (or the user asked you) "what's my name?" / "¿cómo me llamo?", you answered you don't know, and the user then replies with just "Pablo" → REMEMBER: The user's name is Pablo. / REMEMBER: El usuario se llama Pablo. (match the language of that exchange; a short reply that answers a question you or the user just asked about them is still a personal fact — do not require the full sentence "my name is X")
 - user says "I'm a nurse and I work night shifts" → REMEMBER: The user is a nurse who works night shifts.
+- user says "soy enfermera y trabajo de noche" → REMEMBER: La usuaria es enfermera y trabaja de noche.
 - user says "please always answer in one paragraph" → REMEMBER: The user prefers answers in a single paragraph.
 - user says "what's the weather like?" → do not save anything, this is a question
 - user says "can you fix this bug for me?" → do not save anything, this is about the current task, not a fact about the user

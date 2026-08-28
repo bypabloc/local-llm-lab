@@ -35,6 +35,7 @@ def test_build_router_expone_los_modelos_configurados() -> None:
         "qwen3-8b",
         "phi4-mini",
         "gemma4-e2b",
+        "gemma4-e4b",
     }
 
 

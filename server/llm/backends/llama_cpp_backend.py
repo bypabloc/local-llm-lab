@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -5,6 +6,8 @@ from typing import Any
 from llm.backends.errors import BackendLoadError
 from llm.backends.protocol import ChatMessage, GenerationResult
 from llm.config.models import ModelConfig
+
+logger = logging.getLogger(__name__)
 
 
 class LlamaCppBackend:
@@ -64,6 +67,13 @@ class LlamaCppBackend:
     def stream_chat(
         self, messages: list[ChatMessage], max_tokens: int
     ) -> Iterator[str]:
+        for i, msg in enumerate(messages):
+            logger.debug(
+                "stream_chat: mensaje[%d] role=%s content=%r",
+                i,
+                msg["role"],
+                msg["content"],
+            )
         stream = self._llm.create_chat_completion(
             messages=list(messages),
             max_tokens=max_tokens,

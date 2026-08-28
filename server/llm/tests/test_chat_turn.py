@@ -161,6 +161,32 @@ def test_ip_detectado_dispara_ronda_de_seguimiento(
     assert len(backend.stream_calls) == 2
 
 
+def test_tool_result_se_agrega_con_role_user_no_system(
+    monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
+) -> None:
+    """Algunos templates de chat (Gemma) exigen alternancia estricta
+    user/assistant/user/assistant y rechazan un "system" a mitad de
+    conversación — ver ValueError real de llama-cpp-python reproducido en
+    producción con gemma4-e2b + LOCATION:."""
+    from llm.shell.location import IpOutcome
+
+    monkeypatch.setattr(
+        "llm.services.chat_turn.get_public_ip",
+        lambda: IpOutcome(ip="1.2.3.4"),
+    )
+
+    backend = FakeBackend(make_model_config(), reply="IP:")
+    history: list[dict[str, str]] = [{"role": "user", "content": "cuál es mi ip"}]
+
+    _events(backend, history, memory_store)
+
+    roles = [m["role"] for m in history]
+    for previous, current in zip(roles, roles[1:], strict=False):
+        if previous in ("user", "assistant"):
+            assert current != previous, f"roles no alternan: {roles}"
+    assert "system" not in roles[1:]
+
+
 def test_location_detectado_dispara_ronda_de_seguimiento(
     monkeypatch: pytest.MonkeyPatch, memory_store: MemoryStore
 ) -> None:

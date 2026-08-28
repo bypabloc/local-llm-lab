@@ -8,11 +8,19 @@ interface Props {
   onChange: (settings: ChatSettings) => void
   onOpenBench: () => void
   onOpenSettings: () => void
+  onOpenModelDownloads: () => void
 }
 
 const AGENTS: Agent[] = ["jarvis", "tars", "gemma"]
 
-export function Sidebar({ models, settings, onChange, onOpenBench, onOpenSettings }: Props) {
+export function Sidebar({
+  models,
+  settings,
+  onChange,
+  onOpenBench,
+  onOpenSettings,
+  onOpenModelDownloads,
+}: Props) {
   function patch(partial: Partial<ChatSettings>) {
     onChange({ ...settings, ...partial })
   }
@@ -41,11 +49,21 @@ export function Sidebar({ models, settings, onChange, onOpenBench, onOpenSetting
           onChange={(e) => patch({ model: e.target.value })}
         >
           {models.map((m) => (
-            <option key={m.name} value={m.name}>
+            <option key={m.name} value={m.name} disabled={!m.is_downloaded}>
               {m.name}
+              {m.is_downloaded ? "" : " (no descargado)"}
             </option>
           ))}
         </select>
+        {models.some((m) => !m.is_downloaded) && (
+          <button
+            type="button"
+            className="self-start text-xs text-blue-600 underline hover:text-blue-500 dark:text-blue-400"
+            onClick={onOpenModelDownloads}
+          >
+            Descargar modelos faltantes
+          </button>
+        )}
       </label>
 
       <label className={labelClass}>
