@@ -1,0 +1,14 @@
+{
+  "name": "local-llm-lab-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter ui dev",
+    "dev:django": "PYTHONPATH=server LLM_LAB_SERVER_DEBUG=1 uv run daphne -b 127.0.0.1 -p 8000 server.asgi:application",
+    "dev:web": "concurrently -n django,ui -c blue,green \"pnpm dev:django\" \"pnpm --filter ui dev\"",
+    "build": "pnpm --filter ui build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "concurrently": "^10.0.5"
+  }
+}

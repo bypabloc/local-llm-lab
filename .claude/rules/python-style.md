@@ -55,3 +55,23 @@ UPPER_SNAKE_CASE          # constantes de módulo
   `pyproject.toml` + `uv sync` / `uv add`.
 - Antes de agregar una dependencia nueva, evaluar si stdlib o una ya
   instalada la resuelve (ver `kiss-solid.md`).
+
+## Extensión para `server/` (Django, stack de UI)
+
+Todo lo de arriba aplica igual en `server/` — mismo target de Python,
+mismo `ruff`/`mypy --strict` (corridos desde la raíz sobre `src server`),
+mismas reglas de nomenclatura. Diferencias puntuales:
+
+- **`server/llm/services/*.py` son funciones puras**, sin importar nada de
+  `django.*` — reciben tipos de `core.*` y devuelven tipos propios
+  (`ChatEvent`, dataclasses). `server/llm/views.py` es la única capa que
+  conoce `HttpRequest`/`JsonResponse`/`StreamingHttpResponse`.
+- **`Any` para librerías sin stubs de Django**: `django-stubs` cubre la
+  mayoría del framework, pero algunas piezas (`daphne`, ciertos internals
+  de `StreamingHttpResponse`) no tienen stubs — mismo criterio que
+  `llama-cpp-python`: aislar el `# type: ignore[import-untyped]` en el
+  import exacto, nunca propagar `Any` más allá de ese punto (ver
+  `server/run_sidecar.py` para el patrón).
+- **Tests de `server/llm/tests/` en español, mismo estilo** que
+  `tests/unit/` — ver `.claude/rules/testing.md` para el detalle
+  específico de qué se mockea en este stack.

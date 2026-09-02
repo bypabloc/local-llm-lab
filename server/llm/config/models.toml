@@ -1,0 +1,60 @@
+# Modelos disponibles para el router. Path relativo a la raíz del proyecto.
+# Los .gguf no se versionan en git (ver .gitignore) — descargar manualmente
+# en models/. Ver .claude/skills/add-model/SKILL.md para agregar uno nuevo.
+#
+# Contexto de por qué estos modelos: .claude/rules/research-context.md
+
+[models.qwen3-4b]
+path = "models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+n_ctx = 8192
+n_threads = 12
+n_gpu_layers = 0
+license = "Apache-2.0"
+hf_repo = "unsloth/Qwen3-4B-Instruct-2507-GGUF"
+hf_file = "Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+
+[models.qwen3-8b]
+path = "models/Qwen3-8B-Q4_K_M.gguf"
+n_ctx = 8192
+n_threads = 12
+n_gpu_layers = 0
+license = "Apache-2.0"
+hf_repo = "unsloth/Qwen3-8B-GGUF"
+hf_file = "Qwen3-8B-Q4_K_M.gguf"
+
+[models.phi4-mini]
+path = "models/Phi-4-mini-instruct-Q4_K_M.gguf"
+n_ctx = 8192
+n_threads = 12
+n_gpu_layers = 0
+license = "MIT"
+hf_repo = "unsloth/Phi-4-mini-instruct-GGUF"
+hf_file = "Phi-4-mini-instruct-Q4_K_M.gguf"
+
+[models.gemma4-e2b]
+path = "models/gemma-4-E2B-it-Q4_K_M.gguf"
+n_ctx = 8192
+n_threads = 12
+n_gpu_layers = 0
+license = "Apache-2.0"
+hf_repo = "unsloth/gemma-4-E2B-it-GGUF"
+hf_file = "gemma-4-E2B-it-Q4_K_M.gguf"
+
+[models.gemma4-e4b]
+path = "models/gemma-4-E4B-it-Q4_K_M.gguf"
+n_ctx = 8192
+n_threads = 12
+n_gpu_layers = 0
+license = "Apache-2.0"
+hf_repo = "unsloth/gemma-4-E4B-it-GGUF"
+hf_file = "gemma-4-E4B-it-Q4_K_M.gguf"
+
+# No es un modelo GGUF local: usa el CLI `agy` (Antigravity), autenticado
+# por OAuth con la suscripción Google AI Pro/Ultra del usuario — requiere
+# `agy` instalado y logueado (`agy` sin flags hace el login interactivo).
+# Sin path/n_ctx/n_gpu_layers porque no hay archivo que cargar ni VRAM que
+# reservar. Ver .claude/rules/ui-stack-architecture.md si se agrega un
+# backend remoto nuevo con esta misma forma.
+[models.agy]
+backend = "agy"
+license = "proprietary"
