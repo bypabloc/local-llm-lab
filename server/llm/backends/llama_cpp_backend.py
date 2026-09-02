@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Iterator
-from pathlib import Path
 from typing import Any
 
 from llm.backends.errors import BackendLoadError
@@ -30,7 +29,7 @@ class LlamaCppBackend:
                 "Ver .claude/rules/research-context.md"
             )
 
-        if not Path(config.path).exists():
+        if config.path is None or not config.path.exists():
             raise BackendLoadError(
                 f"modelo '{config.name}' no encontrado en {config.path}"
             )

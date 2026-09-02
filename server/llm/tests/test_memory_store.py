@@ -89,3 +89,41 @@ def test_search_no_duplica_resultado_ya_encontrado_por_lexico(tmp_path: Path) ->
     results = store.search("¿cómo me llamo?")
 
     assert len(results) == 1
+
+
+def test_backfill_embeddings_completa_hechos_guardados_sin_embed_fn(
+    tmp_path: Path,
+) -> None:
+    """Bug real: hechos guardados antes de que embed_fn estuviera disponible
+    (o mientras el modelo de embeddings no estaba descargado) quedan sin fila
+    en memory_embedding para siempre — search() nunca los encuentra por
+    sinónimos aunque el modelo de embeddings se active después."""
+    db_path = tmp_path / "memory.db"
+    store_sin_embed = MemoryStore(db_path)
+    store_sin_embed.save("El usuario se llama Pablo")
+
+    store_con_embed = MemoryStore(db_path, embed_fn=_fake_embed_fn)
+    assert store_con_embed.search("¿Sabes mi nombre?") == []
+
+    backfilled = store_con_embed.backfill_embeddings()
+
+    assert backfilled == 1
+    results = store_con_embed.search("¿Sabes mi nombre?")
+    assert len(results) == 1
+    assert "Pablo" in results[0].content
+
+
+def test_backfill_embeddings_no_reprocesa_hechos_ya_embebidos(
+    tmp_path: Path,
+) -> None:
+    store = MemoryStore(tmp_path / "memory.db", embed_fn=_fake_embed_fn)
+    store.save("El usuario se llama Pablo")
+
+    assert store.backfill_embeddings() == 0
+
+
+def test_backfill_embeddings_sin_embed_fn_no_hace_nada(tmp_path: Path) -> None:
+    store = MemoryStore(tmp_path / "memory.db")
+    store.save("El usuario se llama Pablo")
+
+    assert store.backfill_embeddings() == 0

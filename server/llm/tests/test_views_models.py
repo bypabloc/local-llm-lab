@@ -15,5 +15,6 @@ def test_get_models_lista_los_modelos_del_toml(client: Client) -> None:
         "phi4-mini",
         "gemma4-e2b",
         "gemma4-e4b",
+        "agy",
         "qwen3-embedding-0.6b",
     }

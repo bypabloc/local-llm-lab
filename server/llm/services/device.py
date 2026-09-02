@@ -3,7 +3,9 @@ import logging
 import os
 from pathlib import Path
 
+from llm.backends.agy_backend import AgyBackend
 from llm.backends.llama_cpp_backend import LlamaCppBackend
+from llm.backends.protocol import LLMBackend
 from llm.config.models import ModelConfig, load_model_configs
 from llm.router.llm_router import LLMRouter
 
@@ -61,15 +63,25 @@ def resolve_model_configs(
         raise
     if device == "gpu":
         configs = {
-            name: dataclasses.replace(config, n_gpu_layers=_GPU_LAYERS_FULL_OFFLOAD)
+            name: (
+                dataclasses.replace(config, n_gpu_layers=_GPU_LAYERS_FULL_OFFLOAD)
+                if config.backend == "llama_cpp"
+                else config
+            )
             for name, config in configs.items()
         }
     logger.debug("resolve_model_configs -> %d configs", len(configs))
     return configs
 
 
+def _backend_factory(config: ModelConfig) -> LLMBackend:
+    if config.backend == "agy":
+        return AgyBackend(config)
+    return LlamaCppBackend(config)
+
+
 def build_router(device: str, models_dir: Path | None = None) -> LLMRouter:
     logger.info("build_router: device=%s models_dir=%s", device, models_dir)
     return LLMRouter(
-        resolve_model_configs(device, models_dir), backend_factory=LlamaCppBackend
+        resolve_model_configs(device, models_dir), backend_factory=_backend_factory
     )

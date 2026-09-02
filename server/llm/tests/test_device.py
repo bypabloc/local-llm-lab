@@ -36,6 +36,7 @@ def test_build_router_expone_los_modelos_configurados() -> None:
         "phi4-mini",
         "gemma4-e2b",
         "gemma4-e4b",
+        "agy",
     }
 
 
@@ -48,7 +49,11 @@ def test_build_router_gpu_fuerza_n_gpu_layers_full_offload() -> None:
 
     configs = resolve_model_configs("gpu")
 
-    assert all(config.n_gpu_layers == -1 for config in configs.values())
+    assert all(
+        config.n_gpu_layers == -1
+        for config in configs.values()
+        if config.backend == "llama_cpp"
+    )
 
 
 def test_build_router_cpu_respeta_n_gpu_layers_del_toml() -> None:

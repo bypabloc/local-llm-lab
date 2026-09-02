@@ -139,6 +139,31 @@ class MemoryStore:
         )
         return final
 
+    def backfill_embeddings(self) -> int:
+        """Genera el embedding faltante de hechos guardados antes de que
+        `embed_fn` estuviera disponible (modelo no descargado aún, o
+        guardados con una versión previa sin soporte semántico). Sin esto,
+        esos hechos quedan invisibles al recall semántico para siempre,
+        aunque el modelo de embeddings se active después."""
+        if self._embed_fn is None:
+            return 0
+        rows = self._connection.execute(
+            "SELECT content FROM memory "
+            "WHERE content NOT IN (SELECT content FROM memory_embedding)"
+        ).fetchall()
+        for (content,) in rows:
+            vector = self._embed_fn(content)
+            self._connection.execute(
+                "INSERT INTO memory_embedding (content, vector) VALUES (?, ?)",
+                (content, _pack_embedding(vector)),
+            )
+        if rows:
+            self._connection.commit()
+            logger.info(
+                "MemoryStore.backfill_embeddings: %d hecho(s) completados", len(rows)
+            )
+        return len(rows)
+
     def _semantic_search(
         self, query: str, limit: int, exclude: Iterable[str]
     ) -> list[MemoryEntry]:

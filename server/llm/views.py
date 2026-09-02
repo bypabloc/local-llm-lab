@@ -60,7 +60,7 @@ def list_models(request: HttpRequest) -> JsonResponse:
                 "name": name,
                 "n_ctx": config.n_ctx,
                 "license": config.license,
-                "is_downloaded": config.path.exists(),
+                "is_downloaded": config.path.exists() if config.path else True,
                 "downloadable": bool(config.hf_repo and config.hf_file),
                 "kind": "chat",
             }
@@ -73,7 +73,8 @@ def list_models(request: HttpRequest) -> JsonResponse:
                 "name": embedding_config.name,
                 "n_ctx": embedding_config.n_ctx,
                 "license": embedding_config.license,
-                "is_downloaded": embedding_config.path.exists(),
+                "is_downloaded": embedding_config.path is not None
+                and embedding_config.path.exists(),
                 "downloadable": True,
                 "kind": "embedding",
             }
@@ -253,6 +254,23 @@ def bench(request: HttpRequest) -> JsonResponse:
         raise
 
 
+_embeddings_backfilled = False
+
+
+def _backfill_embeddings_once(memory_store: MemoryStore) -> None:
+    """Completa embeddings de hechos guardados antes de que el modelo de
+    embeddings estuviera disponible. Una sola vez por proceso — hechos ya
+    embebidos no se reprocesan (backfill_embeddings ya filtra eso), pero
+    evita la query de chequeo en cada turno de chat una vez confirmado."""
+    global _embeddings_backfilled
+    if _embeddings_backfilled:
+        return
+    count = memory_store.backfill_embeddings()
+    if count:
+        logger.info("_backfill_embeddings_once: %d hecho(s) completados", count)
+    _embeddings_backfilled = True
+
+
 async def _chat_event_stream(
     backend: Any,
     history: list[ChatMessage],
@@ -280,6 +298,7 @@ async def _chat_event_stream(
                 "habilitado" if embed_fn is not None else "deshabilitado",
             )
             memory_store = MemoryStore(memory_db_path, embed_fn=embed_fn)
+            _backfill_embeddings_once(memory_store)
             for event in run_chat_turn(
                 backend,
                 history,

@@ -62,7 +62,9 @@ def test_load_model_configs_repo_real_resuelve_project_root_correcto() -> None:
 
     assert configs
     for config in configs.values():
-        assert config.path.parts[-2] == "models"
+        if config.backend == "llama_cpp":
+            assert config.path is not None
+            assert config.path.parts[-2] == "models"
 
 
 def test_load_model_configs_lee_hf_repo_y_hf_file(tmp_path: Path) -> None:
@@ -99,7 +101,7 @@ def test_models_toml_real_path_coincide_con_hf_file() -> None:
     configs = load_model_configs()
 
     for config in configs.values():
-        if config.hf_file is not None:
+        if config.hf_file is not None and config.path is not None:
             assert config.path.name == config.hf_file, (
                 f"{config.name}: path={config.path.name!r} != "
                 f"hf_file={config.hf_file!r}"
