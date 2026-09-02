@@ -38,11 +38,16 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     return float(dot / (norm_a * norm_b))
 
 
-# ponytail: umbral calibrado con Qwen3-Embedding-0.6B real (no una
-# suposición) — "¿sabes mi nombre?" vs "el usuario se llama Pablo" da 0.43,
-# preguntas no relacionadas dan ~0.26-0.28. 0.35 separa ambos casos con
-# margen. Recalibrar si se cambia el modelo de embeddings.
-_SIMILARITY_THRESHOLD = 0.35
+# ponytail: 0.35 daba falsos positivos reales en producción — un hecho en
+# inglés ("The user's name is Pablo.") matcheaba 0.41 contra una consulta
+# de "Dame un lorem ipsum" sin relación alguna, disparando un recall
+# espurio. Recalibrado con un set más amplio de queries relevantes/
+# irrelevantes (Qwen3-Embedding-0.6B real, hechos en español consistente):
+# relevantes ("¿cómo me llamo?", "cuál es mi nombre", etc.) dan 0.39-0.45,
+# irrelevantes (preguntas de código, clima, cultura general) dan 0.25-0.30.
+# 0.38 separa ambos casos con margen sano. Recalibrar si se cambia el
+# modelo de embeddings.
+_SIMILARITY_THRESHOLD = 0.38
 
 
 class MemoryStore:

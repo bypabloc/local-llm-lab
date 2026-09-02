@@ -5,8 +5,9 @@ test.describe("chat contra el backend Django real", () => {
     await page.goto("/")
 
     const select = page.locator("select").first()
-    await expect(select.locator("option")).toHaveCount(4)
+    await expect(select.locator("option")).toHaveCount(7)
     await expect(select.locator("option", { hasText: "gemma4-e2b" })).toHaveCount(1)
+    await expect(select.locator("option", { hasText: "agy" })).toHaveCount(1)
   })
 
   test("envía un mensaje por clic y recibe streaming real del modelo", async ({
@@ -128,6 +129,24 @@ test.describe("chat contra el backend Django real", () => {
 
     await expect(page.getByRole("button", { name: "Recargar ventana" })).toBeVisible()
     await expect(page.getByRole("button", { name: "Reiniciar app" })).toBeVisible()
+  })
+
+  test("el chat indica cuándo se usó la tool de memoria (agy real)", async ({
+    page,
+  }) => {
+    await page.goto("/")
+
+    const modelSelect = page.locator("select").first()
+    await modelSelect.selectOption("agy")
+
+    const textarea = page.getByPlaceholder("Escribí un mensaje...")
+    await textarea.fill("como me llamo")
+    await page.getByRole("button", { name: "Enviar" }).click()
+
+    await expect(page.getByText("[tool usada: memory]")).toBeVisible({
+      timeout: 60_000,
+    })
+    await expect(textarea).toBeEnabled({ timeout: 60_000 })
   })
 
   test("Recargar ventana recarga la página (mensajes se limpian)", async ({

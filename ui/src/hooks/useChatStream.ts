@@ -73,11 +73,18 @@ export function useChatStream(settings: ChatSettings) {
           }
         } else if (event.kind === "tool_result") {
           const text = String(event.payload.text ?? "")
+          const tool = String(event.payload.tool ?? "tool")
           setMessages((prev) => [
             ...prev,
-            { id: makeId(), role: "system", content: text },
+            { id: makeId(), role: "system", content: `[tool usada: ${tool}]\n${text}` },
           ])
           assistantIdRef.current = null
+        } else if (event.kind === "memory_recalled") {
+          const text = String(event.payload.text ?? "")
+          setMessages((prev) => [
+            ...prev,
+            { id: makeId(), role: "system", content: `[tool usada: memory]\n${text}` },
+          ])
         } else if (event.kind === "run_proposed") {
           setPendingRun({ command: String(event.payload.command ?? "") })
         }

@@ -8,7 +8,7 @@ import { useChatStream, type ChatSettings } from "./hooks/useChatStream"
 import { useModels } from "./hooks/useModels"
 
 const DEFAULT_SETTINGS: ChatSettings = {
-  model: "gemma4-e2b",
+  model: "agy",
   device: null,
   agent: "jarvis",
   maxTokens: 1024,

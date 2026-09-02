@@ -18,7 +18,9 @@ from llm.shell.web_search import extract_search_query, search_web
 
 logger = logging.getLogger(__name__)
 
-ChatEventKind = Literal["token", "run_proposed", "tool_result", "assistant_done"]
+ChatEventKind = Literal[
+    "token", "run_proposed", "tool_result", "memory_recalled", "assistant_done"
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +152,7 @@ def run_chat_turn(
         if recalled is not None:
             logger.debug("run_chat_turn: memoria recuperada, inyectando en history")
             history.insert(len(history) - 1, {"role": "system", "content": recalled})
+            yield ChatEvent("memory_recalled", {"text": recalled, "tool": "memory"})
 
     logger.debug("run_chat_turn: primer _stream")
     yield from _stream(backend, history, max_tokens, no_think)
@@ -159,32 +162,40 @@ def run_chat_turn(
         command = extract_run_command(response_text)
         if command is not None:
             logger.info("run_chat_turn: RUN: detectado, cortando turno")
-            yield ChatEvent("run_proposed", {"command": command})
+            yield ChatEvent("run_proposed", {"command": command, "tool": "run"})
             return
 
+    tool_name: str | None = None
     tool_result: str | None = None
     if allow_search:
         tool_result = _handle_search_query(response_text)
+        tool_name = "search"
     if tool_result is None:
         tool_result = _handle_ip_query(response_text)
+        tool_name = "ip"
     if tool_result is None:
         tool_result = _handle_location_query(response_text)
+        tool_name = "location"
     if tool_result is None:
         tool_result = _handle_weather_query(response_text)
+        tool_name = "weather"
     if tool_result is None:
         tool_result = _handle_remember_note(response_text, memory_store)
+        tool_name = "remember"
 
     if tool_result is None:
         logger.debug("run_chat_turn: sin marcador de tool, fin de turno")
         yield ChatEvent("assistant_done", {})
         return
 
-    logger.info("run_chat_turn: tool_result detectado, ronda de seguimiento")
+    logger.info(
+        "run_chat_turn: tool_result detectado (%s), ronda de seguimiento", tool_name
+    )
     # ponytail: role "user" y no "system" — algunos templates de chat (Gemma)
     # exigen alternancia estricta user/assistant/user/assistant y rechazan un
     # "system" intercalado a mitad de conversación (ValueError de llama-cpp).
     history.append({"role": "user", "content": tool_result})
-    yield ChatEvent("tool_result", {"text": tool_result})
+    yield ChatEvent("tool_result", {"text": tool_result, "tool": tool_name})
 
     yield from _stream(backend, history, max_tokens, no_think)
     yield ChatEvent("assistant_done", {})

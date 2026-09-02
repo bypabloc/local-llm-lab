@@ -32,6 +32,7 @@ export type ChatEventKind =
   | "token"
   | "run_proposed"
   | "tool_result"
+  | "memory_recalled"
   | "assistant_done"
 
 export interface ChatEvent {

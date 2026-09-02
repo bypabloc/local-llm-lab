@@ -59,6 +59,32 @@ def test_recall_de_memoria_inyecta_mensaje_system_antes_del_turno(
     assert any("Pablo" in m["content"] for m in system_messages)
 
 
+def test_recall_de_memoria_emite_evento_memory_recalled_visible_en_el_chat(
+    memory_store: MemoryStore,
+) -> None:
+    memory_store.save("el usuario se llama Pablo")
+    backend = FakeBackend(make_model_config(), reply="ok")
+    history: list[dict[str, str]] = [{"role": "user", "content": "como me llamo"}]
+
+    events = _events(backend, history, memory_store)
+
+    recall_events = [e for e in events if e.kind == "memory_recalled"]
+    assert len(recall_events) == 1
+    assert "Pablo" in recall_events[0].payload["text"]
+    assert events.index(recall_events[0]) < [e.kind for e in events].index("token")
+
+
+def test_sin_hechos_en_memoria_no_emite_evento_memory_recalled(
+    memory_store: MemoryStore,
+) -> None:
+    backend = FakeBackend(make_model_config(), reply="ok")
+    history: list[dict[str, str]] = [{"role": "user", "content": "como me llamo"}]
+
+    events = _events(backend, history, memory_store)
+
+    assert not any(e.kind == "memory_recalled" for e in events)
+
+
 def test_no_think_agrega_sufijo_al_ultimo_mensaje_user_antes_de_stream(
     memory_store: MemoryStore,
 ) -> None:
@@ -122,7 +148,9 @@ def test_search_detectado_dispara_ronda_de_seguimiento_unica(
 
     events = _events(backend, history, memory_store, allow_search=True)
 
-    assert any(e.kind == "tool_result" for e in events)
+    tool_events = [e for e in events if e.kind == "tool_result"]
+    assert len(tool_events) == 1
+    assert tool_events[0].payload["tool"] == "search"
     assert events[-1].kind == "assistant_done"
     assert len(backend.stream_calls) == 2
 
@@ -135,7 +163,9 @@ def test_remember_detectado_guarda_en_memoria_y_hace_seguimiento(
 
     events = _events(backend, history, memory_store)
 
-    assert any(e.kind == "tool_result" for e in events)
+    tool_events = [e for e in events if e.kind == "tool_result"]
+    assert len(tool_events) == 1
+    assert tool_events[0].payload["tool"] == "remember"
     assert len(backend.stream_calls) == 2
     assert memory_store.search("café")
 
@@ -158,6 +188,7 @@ def test_ip_detectado_dispara_ronda_de_seguimiento(
     tool_events = [e for e in events if e.kind == "tool_result"]
     assert len(tool_events) == 1
     assert "1.2.3.4" in tool_events[0].payload["text"]
+    assert tool_events[0].payload["tool"] == "ip"
     assert len(backend.stream_calls) == 2
 
 
@@ -207,6 +238,7 @@ def test_location_detectado_dispara_ronda_de_seguimiento(
     tool_events = [e for e in events if e.kind == "tool_result"]
     assert len(tool_events) == 1
     assert "Lima" in tool_events[0].payload["text"]
+    assert tool_events[0].payload["tool"] == "location"
 
 
 def test_weather_detectado_dispara_ronda_de_seguimiento(
@@ -229,6 +261,7 @@ def test_weather_detectado_dispara_ronda_de_seguimiento(
     tool_events = [e for e in events if e.kind == "tool_result"]
     assert len(tool_events) == 1
     assert "18.0" in tool_events[0].payload["text"]
+    assert tool_events[0].payload["tool"] == "weather"
 
 
 def test_orden_de_deteccion_ip_antes_que_location_antes_que_weather(
